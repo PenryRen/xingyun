@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.TrainUserMapper">
+
+  <select id="trainStatusCount" resultType="java.lang.Integer">
+    select count(*)
+    from t_train_user
+    where deleted = 0 and train_id = #{trainId}
+    <if test="status != null">
+      and status = #{status}
+    </if>
+  </select>
+
+
+
+  <select id="userPage" resultType="com.mindskip.wdd.viewmodel.train.detail.TrainPageResponseVM"  parameterType="com.mindskip.wdd.viewmodel.train.detail.TrainPageRequestVM">
+    SELECT tu.id,u.user_name userName ,u.real_name realName ,u.department_id departmentId ,u.id_card idCard,u.work_no workNo,u.job_title jobTitle,
+           tu.status,tu.create_time createTime,tu.complete_time completeTime
+    from t_user u LEFT JOIN t_train_user tu on u.id=tu.create_user and tu.deleted = 0 and tu.train_id = #{trainId}
+    where  u.deleted= 0 and system_role = 1 and u.status = 1
+    <if test="userName != null and userName != ''">
+      and u.user_name like concat('%',#{userName},'%')
+    </if>
+    <if test="departmentIdList != null and departmentIdList.size > 0">
+      and tu.create_department_id in
+      <foreach collection="departmentIdList" separator="," open="(" close=")" item="id">
+        #{id}
+      </foreach>
+    </if>
+    <if test="status != null">
+      and tu.status = #{status}
+    </if>
+    <if test="dataFilterUserId != null">
+      and tu.create_user = #{dataFilterUserId}
+    </if>
+    <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+      and tu.create_department_id in
+      <foreach item="item" collection="dataFilterDepartmentList" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </if>
+  </select>
+
+
+  <select id="selectTrainUser" resultType="com.mindskip.wdd.domain.TrainUser">
+    select  *  from t_train_user
+    where deleted = 0 and train_id = #{trainId} and create_user = #{userId}
+    limit 1
+  </select>
+
+</mapper>

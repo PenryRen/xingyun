@@ -1,0 +1,127 @@
+system:
+  name: 星云智训AI平台
+  paper-status-time-to-live: 5m
+  token-time-to-live: 15d
+  security-ignore-urls: >
+    - /api/user/department/tree
+    - /api/user/register
+    - /api/user/login
+    - /api/kaptcha/refresh
+    - /api/vmWare/ssh
+  encrypt:
+    database:
+      rsa:
+        public-key: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDeKLokqISogF0lnYI9O1CzpN1iIJuotEmmA7Ufs7OUuf/AjlGuW8Gq/UqbDa9ORG5c+l90izaaKiryqjOork/lX88WIKF6Y3Db+WLAE36y5MLp1oThsEhSEp8Km5cA+aZxdrz5whgQHTkLtZ6NEQp2FeHgTtDhEft9CteKlID+9QIDAQAB
+        private-key: MIICdAIBADANBgkqhkiG9w0BAQEFAASCAl4wggJaAgEAAoGBAN4ouiSohKiAXSWdgj07ULOk3WIgm6i0SaYDtR+zs5S5/8COUa5bwar9SpsNr05Eblz6X3SLNpoqKvKqM6iuT+VfzxYgoXpjcNv5YsATfrLkwunWhOGwSFISnwqblwD5pnF2vPnCGBAdOQu1no0RCnYV4eBO0OER+30K14qUgP71AgMBAAECgYAu5tJFov4+xLrlkhdI7hjflFLYwKGcQFO8JNQ8WSf0okAIWwOLl/uPKeJyUbVNBM13+7PjWvCwI27lxGEbn5FmKteBoRTXwhDZQrZCxv9PhADnbGQdRwV7/sFNkew1BA5oJKP5Nb4kqVpAE+eDe7LQoWe998lGNMLtsZEies5jkQJBAPPPc7RE6730fC2gE0Ci73BQ96PEHFbSuzP5RwyQx596h7L+XVTwPgJ/RDkH9RKtGFdtUujsWCd0E3MZbrAHcEMCQQDpRCiqjt5NG1wahAkEQiWH0/IZrBdeSvpVoZ0DjpHc9SRl5eBC+17OcRM7nXzrq/Vi0wAfOjOLjahq/QQ13pxnAj8MYXx+qwFNpByqNHbF0YBXM8Vfi5Xk0s6u1PnGqZN5hb9eV4xlw81iUxQj0UOgrymNRv/u1BGl7z8NmT0Fs1sCQA4nxbP78X+KXn95bbalcPOaKAHo0I43TJOvuACEQVPASJIqbf6ClJFAiWM/vlnq2HxDw6khdglM8mBztDK0rJcCQACU2JokgwEL7MHfHFNamN9o+j/Xda48OMcvuvOrfDGc3dmveDBPzKbES98Xg/Vm7RvPadBRH/MHbb6q95j+3qg=
+    pair-one:
+      rsa:
+        public-key: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDyL5AyMGbHHJ/5Q8TWlaOhh1vaCFkmzbZ/cFR5sF4CSCmG0qvVpPoH0vgIxrUcmKiwpHcMyNyJ0sTg9xKOidmcWBFlI4vebQEN+Z9D3EnT1XjjQXSJvnnUufAuJilWAdlTeE+K4+zpdoBNpx15h1DeLBS7Xcplf4/ApRqKjc1BoQIDAQAB
+        private-key: MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAPIvkDIwZsccn/lDxNaVo6GHW9oIWSbNtn9wVHmwXgJIKYbSq9Wk+gfS+AjGtRyYqLCkdwzI3InSxOD3Eo6J2ZxYEWUji95tAQ35n0PcSdPVeONBdIm+edS58C4mKVYB2VN4T4rj7Ol2gE2nHXmHUN4sFLtdymV/j8ClGoqNzUGhAgMBAAECgYBwmkq5+yUeOKHsnGS9vK9q3+uF8VG6J/VNRWYRej4LY4/jPrpkSCN0VdO7COCWXig4kQ9FI3Lepd+iFV5MZa2GCyVJAdv0iGZNoMZiy9Nvteom0/QJVVZuJsR57QhnySalSmaXdQ8InakiShw7cXczFa0XULM5mQf/myJZk+P90QJBAPmzAD9HO+RG17InI3U4nKYwz5IgNy/8FhteenKnJ4pHePa3wmjl2YF9bXKUNsEaDpcUhuv27q2yOqe7sQZOhQUCQQD4TAb817UBf9SLb8vDyrkZ+geemnA8WA9hddQeOICjBLBhjQOA6bGT9cL3WBuZ1ztH8P+TgLluvYAMflLrZmztAkEAqbAsldQZ7mr6QDZ60Tl0szfuh7Ze6rwcZeMRwYK4yy8BFGESu+ifpHERhNEWWKoVijRH8GlyEBZT6BMUHV4U5QJBAKgaQPjZyZA0TWAB1oC+NUejAZmdkbMpI3CmZ2/2bRDxUcEZyW9zyGgWEWOIYVdsYpQ4U7A3jFOvNIxA0j7RX5kCQQCo/kbSWWiXnUEpiNfbi4rp6YP3Pszs8Upx3pOfXv70lTq9I6bISBdc9ILF2XqP+7XWNToem/xllD5/CU+KVQqA
+    pair-two:
+      rsa:
+        public-key: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDPDAgCQT7kErymXqrQCCYX+O90CyqPDn00u4sDhSnDZQwE5+tAdgvFIxn27CSFq95ImKxYcWECpHXo+QsiNvrLVUNUaJ9eGZFNWtxP2VRnhQ/rUbgn+W4aCPfnCwMRkxBv/aRKmJaXn9HyiJdRJ8Q0gpMdvv/PVVD76qJG9fqThQIDAQAB
+        private-key: MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAM8MCAJBPuQSvKZeqtAIJhf473QLKo8OfTS7iwOFKcNlDATn60B2C8UjGfbsJIWr3kiYrFhxYQKkdej5CyI2+stVQ1Ron14ZkU1a3E/ZVGeFD+tRuCf5bhoI9+cLAxGTEG/9pEqYlpef0fKIl1EnxDSCkx2+/89VUPvqokb1+pOFAgMBAAECgYBTUY8jgSgS1etus+ffIXha60VJGHk+6mC+SL5PY1YEGHS2wLFt1lM0OMTpFew4koo4AqBQUwfr7Uy5vQaa9S8EzFi+JJYVMpMmhxBOMOU+yqBuVIGddPZ6YHl5cXoCBQQPIsr0sXRevP9jGej4A0IzwZ2zV/6z7PkSMk39uLtUQQJBAPnG8837UL2Eoy4ZuCVkWAGlYqI2k2NMdIAXyQaDXtwg1GtwnlH6UUenB0pEVCcPl4oFU3T3ORoPtoP0lR6lBzUCQQDUNI0gXGDo//yOIbLDhdTTobzK9TMaq4eg0GmMI3zK5IBkqniQLawqi0TEbJ2BDEug/kOvxWV/DEeNaD3YrtURAkEAtdSUlaXXUC/njt7gRDA5NPGNzSLHxujYgotOJ3SpMLyhhplUV79PPkcksnbtgAYEvlBEQgjbQ9Kefo8lo0pl5QJAN4ITlG51rx0e/DLWZwy/8ifxkYl4N7a8wJUjttOllhEVgL+Sz+wSiAJsF5Ft1c7YjaFVJUpWVVhp8xRccSyycQJBAIjV0aDT5fB3CtNrzMgHbrJ8cQvsUdmFkdtkexiGdbThjS2J4pQ4thPCmbIL5GrLrjmRk5iYh/icsJqd5DDuU3M=
+  resource:
+    file:
+      location:
+      url:
+#      allow: .gif|.GIF|.jpg|.JPG|.jpeg|.JPEG|.png|.PNG
+      allow: .gif|.GIF|.jpg|.JPG|.jpeg|.JPEG|.png|.PNG|.mp4|.MP4|.pdf|.PDF|.xls|.XLS|.xlsx|.XLSX|.doc|.DOC|.docx|.DOCX|.ppt|.PPT|.pptx|.PPTX|.MP3|.mp3
+    qcloud: #腾讯云对象存储、人脸识别
+      region: ap-chengdu
+      url: https://wdd-1257364288.cos.ap-chengdu.myqcloud.com
+      bucket: wdd-1257364288
+      secret-id: 
+      secret-key: 
+
+
+server:
+  port: 16000
+  undertow:
+    threads:
+      io: 4
+      worker: 16
+    buffer-size: 1024
+    direct-buffers: true
+  compression:
+    enabled: true
+    min-response-size: 1
+  error:
+    path: /error
+
+#logging logback
+logging:
+  config: classpath:logback-spring.xml
+  file:
+    name: ueit
+
+
+mybatis-plus:
+  type-aliases-package: com.mindskip.wdd.domain
+  mapper-locations: classpath:mapper/*.xml
+  global-config:
+    db-config:
+      id-type: auto
+      table-prefix: t_
+
+
+#spring datasource default HikariPool
+spring:
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+  datasource:
+    hikari:
+      idle-timeout: 600000  #10 min
+      max-lifetime: 1800000 #30 min
+      maximum-pool-size: 3
+  redis:
+    timeout: 10000 #超时时间
+    lettuce:
+      pool:
+        max-active: 8 #最大连接数
+        max-wait: -1 #默认-1 最大连接阻塞等待时间
+        max-idle: 8 #最大空闲连接 默认8
+        min-idle: 0 #最小空闲连接
+  cache:
+    type: redis
+    redis:
+      time-to-live: 12h   #12 hour
+  profiles:
+#    active:  prod
+    active:  dev
+
+vm-ware:
+  config-key:
+    #授权
+    authConfigKey: sys.vm.auth
+    #授权过期时间
+    expirationConfigKey: sys.vm.expiration
+    #虚拟机基础信息
+    rootConfigKey: sys.vm.root
+    #虚拟机硬盘信息
+    diskConfigKey: sys.vm.disk
+    #虚拟机上限个数
+    maxCountConfigKey: sys.vm.maxCount
+    #实训虚拟机时间限制 单位(分钟)
+    trainTimeLimitConfigKey: sys.vm.trainTimeLimit
+    #实训虚拟机过期时间限制 单位(分钟)
+    expiredTimeLimitConfigKey: sys.vm.expiredTimeLimit
+  api:
+    #接口前缀
+    urlPrefix: http://192.168.1.210:32080/
+    #授权时间接口地址 Get
+    expiration: api/v1/getProtected
+    #获取虚拟化列表 Get
+    list: api/v1/vms
+    #虚拟机关机接口地址 Put
+    shutdown: api/v1/vms/stop-virtual-machine
+    #虚拟机开机接口地址 Put
+    start: api/v1/vms/start-virtual-machine
+    #虚拟机重启接口地址 Put
+    reStart: api/v1/vms/restart-virtual-machine
+    #虚拟机克隆接口地址 Post
+    clone: api/v1/cloneLocalVM
+    #虚拟机删除接口地址 Delete
+    delete: api/v1/vms

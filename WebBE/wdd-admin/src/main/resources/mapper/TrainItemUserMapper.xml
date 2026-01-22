@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.TrainItemUserMapper">
+
+
+  <select id="trainItemStatusCount" resultType="java.lang.Integer">
+    select count(*)
+    from t_train_item_user
+    where deleted = 0  and train_id = #{trainId}
+    <if test="targetType != null">
+      and target_type = #{targetType}
+    </if>
+    <if test="status != null">
+      and status = #{status}
+    </if>
+  </select>
+
+
+
+  <select id="courseWarePage" resultType="com.mindskip.wdd.viewmodel.train.course.TrainCourseWarePageResponseVM">
+    select tiu.id,ti.`name`,u.user_name userName,u.real_name realName, tiu.current_number currentNumber , tiu.pass_number passNumber,tiu.`status`,tiu.complete_time completeTime
+    from t_user u,t_train_item ti,t_train_item_user tiu
+    WHERE  u.deleted = 0 and ti.deleted = 0 and tiu.deleted = 0 and tiu.target_type = 1
+           and u.id = tiu.create_user and ti.id = tiu.train_item_id  and tiu.train_id = #{trainId}
+          <if test="userName != null and userName != ''">
+              and u.user_name like concat('%',#{userName},'%')
+          </if>
+          <if test="departmentIdList != null and departmentIdList.size > 0">
+            and tiu.create_department_id in
+            <foreach collection="departmentIdList" separator="," open="(" close=")" item="id">
+              #{id}
+            </foreach>
+          </if>
+          <if test="status != null">
+            and tiu.status = #{status}
+          </if>
+          <if test="dataFilterUserId != null">
+            and tiu.create_user = #{dataFilterUserId}
+          </if>
+          <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+            and tiu.create_department_id in
+            <foreach item="item" collection="dataFilterDepartmentList" open="(" separator="," close=")">
+              #{item}
+            </foreach>
+          </if>
+  </select>
+
+
+
+  <select id="getTrainItemUserList" parameterType="java.lang.Long" resultType="com.mindskip.wdd.domain.TrainItemUser">
+    select  *  from t_train_item_user
+    where deleted = 0 and train_user_id = #{trainUserId}
+  </select>
+
+</mapper>

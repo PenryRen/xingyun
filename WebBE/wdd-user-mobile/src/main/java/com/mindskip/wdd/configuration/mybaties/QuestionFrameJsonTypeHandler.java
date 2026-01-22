@@ -1,0 +1,24 @@
+package com.mindskip.wdd.configuration.mybaties;
+
+import com.mindskip.wdd.domain.frame.QuestionFrame;
+import com.mindskip.wdd.utility.JsonUtil;
+import org.apache.ibatis.type.MappedTypes;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+/**
+ * @version 1.7.0
+ * @description: RoleDataFilterFrame对象转json
+ * Copyright (C), 2024, 麒技团队
+ * @date 2024/8/25 10:45
+ */
+@MappedTypes(Object.class)
+public class QuestionFrameJsonTypeHandler extends BaseJsonTypeHandler {
+
+    @Override
+    public Object getNullableResult(ResultSet resultSet, String s) throws SQLException {
+        return JsonUtil.toJsonObject(resultSet.getString(s), QuestionFrame.class);
+    }
+
+}

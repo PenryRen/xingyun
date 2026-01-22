@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ExamPaperAnswerMonitorMapper">
+
+
+    <select id="getMonitor" resultType="com.mindskip.wdd.domain.ExamPaperAnswerMonitor">
+        select *    from t_exam_paper_answer_monitor
+        where exam_paper_id = #{paperId} and create_user = #{userId}
+        limit 1
+    </select>
+
+
+
+  <update id="updateMonitor" parameterType="com.mindskip.wdd.domain.ExamPaperAnswerMonitor">
+    update t_exam_paper_answer_monitor
+    set  system_score = #{systemScore,jdbcType=INTEGER},
+         user_score = #{userScore,jdbcType=INTEGER},
+         question_correct = #{questionCorrect,jdbcType=INTEGER},
+         cheat_count = #{cheatCount,jdbcType=INTEGER},
+         do_time = #{doTime,jdbcType=INTEGER},
+         update_time = #{updateTime,jdbcType=TIMESTAMP},
+         answer_frame_content = #{answerFrameContent,jdbcType=OTHER,typeHandler=com.mindskip.wdd.configuration.mybaties.ExamPaperAnswerFrameJsonTypeHandler}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  
+</mapper>

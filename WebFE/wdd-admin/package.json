@@ -1,0 +1,54 @@
+{
+  "name": "ueit-admin",
+  "version": "9.5.0",
+  "author": "河南财经政法大学麒技团队",
+  "description": "星云教学管理系统",
+  "private": true,
+  "scripts": {
+    "serve": "vite serve --mode development",
+    "build": "vue-tsc --noEmit && vite build --mode production",
+    "lint": "eslint src/**/*.{ts,js,vue} --fix",
+    "prettier": "prettier --write ."
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^1.1.4",
+    "@types/js-cookie": "^3.0.3",
+    "@types/uuid": "^8.3.4",
+    "@vueuse/core": "^9.13.0",
+    "axios": "^1.4.0",
+    "echarts": "^5.4.2",
+    "element-plus": "2.3.7",
+    "jquery": "^3.7.0",
+    "js-cookie": "^3.0.5",
+    "jsencrypt": "^3.3.2",
+    "path-browserify": "^1.0.1",
+    "path-to-regexp": "^6.2.1",
+    "pinia": "^2.1.4",
+    "sortablejs": "^1.15.0",
+    "uuid": "^9.0.0",
+    "vite-plugin-html": "^3.2.0",
+    "vue": "3.3.4",
+    "vue-router": "^4.2.4",
+    "vuedraggable": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/path-browserify": "^1.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "@vitejs/plugin-vue": "^3.2.0",
+    "eslint": "^8.44.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-vue": "^8.7.1",
+    "fast-glob": "^3.3.0",
+    "prettier": "^2.8.8",
+    "sass": "^1.63.6",
+    "typescript": "^4.9.5",
+    "vite": "^3.2.7",
+    "vite-plugin-svg-icons": "^2.0.1",
+    "vue-tsc": "^0.35.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

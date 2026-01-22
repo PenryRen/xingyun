@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.FeedbackMapper">
+
+    <select id="page" resultType="com.mindskip.wdd.domain.Feedback" parameterType="com.mindskip.wdd.viewmodel.user.FeedbackPageRequestVM">
+        select  *  from t_feedback
+        <where>
+            <if test="departmentIdList != null and departmentIdList.size > 0">
+                and  department_id in
+                <foreach collection="departmentIdList" separator="," open="(" close=")" item="id">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="dataFilterUserId != null">
+                and create_user = #{dataFilterUserId}
+            </if>
+            <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+                and department_id in
+                <foreach item="item" collection="dataFilterDepartmentList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+</mapper>

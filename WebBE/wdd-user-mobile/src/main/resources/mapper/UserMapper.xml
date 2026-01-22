@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.UserMapper">
+
+
+  <select id="getUserByUserName" resultType="com.mindskip.wdd.domain.User">
+    select  *  from t_user
+    where deleted= 0 and user_name=#{value} limit 1
+  </select>
+
+
+  <select id="getUserByIdList" resultType="com.mindskip.wdd.domain.User">
+    select  *  from t_user
+    where deleted=0 and id in
+    <foreach collection="idList" separator="," open="(" close=")" item="id">
+      #{id}
+    </foreach>
+  </select>
+
+
+</mapper>

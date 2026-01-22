@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ApplyMapper">
+
+  <update id="updateApply">
+    update t_apply set already_apply_count = already_apply_count
+    <if test="mathCalculate == 1">
+      +
+    </if>
+    <if test="mathCalculate == 2">
+      -
+    </if>
+    1
+    WHERE id= #{id}
+    <if test="mathCalculate == 1">
+      <if test="limited">
+        and already_apply_count &lt; count
+      </if>
+    </if>
+    <if test="mathCalculate == 2">
+      and already_apply_count &gt; 0
+    </if>
+  </update>
+
+  <select id="page" parameterType="com.mindskip.wdd.viewmodel.apply.ApplyPageRequestVM" resultType="com.mindskip.wdd.domain.Apply">
+    SELECT  *  FROM t_apply
+    <where>
+      and deleted= 0
+      <if test="name != null and name != '' ">
+        and name like concat('%',#{name},'%')
+      </if>
+      <if test="applyArchiveIdList != null and applyArchiveIdList.size > 0">
+        and  apply_archive_id in
+        <foreach collection="applyArchiveIdList" separator="," open="(" close=")" item="id">
+          #{id}
+        </foreach>
+      </if>
+      <if test="dataFilterUserId != null">
+        and create_user = #{dataFilterUserId}
+      </if>
+      <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+        and create_department_id in
+        <foreach item="item" collection="dataFilterDepartmentList" open="("  close=")" separator="," >
+          #{item}
+        </foreach>
+      </if>
+    </where>
+  </select>
+
+
+
+  <select id="completePage" parameterType="com.mindskip.wdd.viewmodel.apply.ApplyPageRequestVM" resultType="com.mindskip.wdd.domain.Apply">
+    SELECT  *  FROM t_apply
+    <where>
+       deleted= 0 and #{now} &lt; limit_start_time  and ( status = 3 or #{now} &gt;= apply_end_time)
+      <if test="name != null and name != '' ">
+        and name like concat('%',#{name},'%')
+      </if>
+      <if test="applyArchiveIdList != null and applyArchiveIdList.size > 0">
+        and  apply_archive_id in
+        <foreach collection="applyArchiveIdList" separator="," open="(" close=")" item="id">
+          #{id}
+        </foreach>
+      </if>
+      <if test="selectId != null">
+        and id != #{selectId}
+      </if>
+      <if test="dataFilterUserId != null">
+        and create_user = #{dataFilterUserId}
+      </if>
+      <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+        and create_department_id in
+        <foreach item="item" collection="dataFilterDepartmentList" open="("  close=")" separator="," >
+          #{item}
+        </foreach>
+      </if>
+    </where>
+  </select>
+
+
+
+
+  <select id="userApplyPage" resultType="com.mindskip.wdd.viewmodel.apply.ApplyUserPageResponseVM"  parameterType="com.mindskip.wdd.viewmodel.apply.ApplyUserPageRequestVM">
+    select up.id , u.user_name as userName , u.real_name as realName , u.email , u.phone , u.id_card as idCard , u.work_no as workNo , u.job_title as jobTitle, up.create_time as createTime , u.department_id as departmentId
+    from t_user u LEFT JOIN t_user_apply up on u.id = up.user_id
+    where up.apply_id = #{id} and  u.deleted= 0  and system_role = 1 and u.status = 1  and up.deleted = 0
+    <if test="userName != null and userName != ''">
+      and u.user_name like concat('%',#{userName},'%')
+    </if>
+    <if test="departmentIdList != null and departmentIdList.size > 0">
+      and  u.department_id in
+      <foreach collection="departmentIdList" separator="," open="(" close=")" item="id">
+        #{id}
+      </foreach>
+    </if>
+    <if test="dataFilterUserId != null">
+      and up.create_user = #{dataFilterUserId}
+    </if>
+    <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+      and up.create_department_id in
+      <foreach item="item" collection="dataFilterDepartmentList" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </if>
+  </select>
+
+</mapper>

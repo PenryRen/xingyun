@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.TrainMapper">
+
+
+  <select id="page" parameterType="com.mindskip.wdd.viewmodel.train.TrainPageRequestVM" resultType="com.mindskip.wdd.domain.Train">
+    SELECT  *  FROM t_train cw
+    <where>
+      and cw.deleted= 0  and  #{now}  between cw.start_time  and  cw.end_time
+      <if test="name != null and name != ''">
+        and cw.name like concat(#{name},'%')
+      </if>
+      <if test="trainArchiveIdList != null and trainArchiveIdList.size > 0">
+        and cw.train_archive_id in
+        <foreach collection="trainArchiveIdList" separator="," open="(" close=")" item="id">
+          #{id}
+        </foreach>
+      </if>
+      and exists (select 1 from t_train_department cwd
+      where cw.id = cwd.train_id and cwd.department_id = #{departmentId} and cwd.deleted= 0)
+    </where>
+  </select>
+
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ExamPaperUserMapper">
+
+
+  <insert id="insertList">
+    insert into t_exam_paper_user ( exam_paper_id, user_id,deleted , create_user_id , create_department_id)
+    values
+    <foreach collection="userIdList" item="item"   separator=",">
+      (#{examPaperId}, #{item,jdbcType=INTEGER}, 0 , #{createUserId,jdbcType=INTEGER} , #{createDepartmentId,jdbcType=INTEGER})
+    </foreach>
+  </insert>
+
+
+  <update id="clearPaperResit">
+    update t_exam_paper_user
+    set deleted = 1
+    where exam_paper_id = #{examPaperId} and user_id = #{userId}
+  </update>
+
+</mapper>

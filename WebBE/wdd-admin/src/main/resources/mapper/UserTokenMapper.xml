@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.UserTokenMapper">
+
+  <select id="getToken" parameterType="java.lang.String" resultType="com.mindskip.wdd.domain.UserToken">
+    select  *  from t_user_token
+    where token =  #{token,jdbcType=VARCHAR}
+    order by id desc
+    limit 1
+  </select>
+
+</mapper>

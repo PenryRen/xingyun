@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.TrainItemUserQuestionMapper">
+    
+    <resultMap type="TrainItemUserQuestion" id="TrainItemUserQuestionResult">
+        <result property="id"    column="id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="trainId"    column="train_id"    />
+        <result property="courseWareId"    column="course_ware_id"    />
+        <result property="questionId"    column="question_id"    />
+        <result property="completion"    column="completion"    />
+    </resultMap>
+
+    <sql id="selectTrainItemUserQuestionVo">
+        select id, user_id, train_id, course_ware_id, question_id, completion from t_train_item_user_question
+    </sql>
+
+    <select id="selectTrainItemUserQuestionList" parameterType="TrainItemUserQuestion" resultMap="TrainItemUserQuestionResult">
+        <include refid="selectTrainItemUserQuestionVo"/>
+        <where>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="trainId != null "> and train_id = #{trainId}</if>
+            <if test="courseWareId != null "> and course_ware_id = #{courseWareId}</if>
+            <if test="questionId != null "> and question_id = #{questionId}</if>
+            <if test="completion != null "> and completion = #{completion}</if>
+        </where>
+    </select>
+    
+    <select id="selectTrainItemUserQuestionById" parameterType="Integer" resultMap="TrainItemUserQuestionResult">
+        <include refid="selectTrainItemUserQuestionVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertTrainItemUserQuestion" parameterType="TrainItemUserQuestion" useGeneratedKeys="true" keyProperty="id">
+        insert into t_train_item_user_question
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="trainId != null">train_id,</if>
+            <if test="courseWareId != null">course_ware_id,</if>
+            <if test="questionId != null">question_id,</if>
+            <if test="completion != null">completion,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="trainId != null">#{trainId},</if>
+            <if test="courseWareId != null">#{courseWareId},</if>
+            <if test="questionId != null">#{questionId},</if>
+            <if test="completion != null">#{completion},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTrainItemUserQuestion" parameterType="TrainItemUserQuestion">
+        update t_train_item_user_question
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="trainId != null">train_id = #{trainId},</if>
+            <if test="courseWareId != null">course_ware_id = #{courseWareId},</if>
+            <if test="questionId != null">question_id = #{questionId},</if>
+            <if test="completion != null">completion = #{completion},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTrainItemUserQuestionById" parameterType="Integer">
+        delete from t_train_item_user_question where id = #{id}
+    </delete>
+
+    <delete id="deleteTrainItemUserQuestionByIds" parameterType="String">
+        delete from t_train_item_user_question where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

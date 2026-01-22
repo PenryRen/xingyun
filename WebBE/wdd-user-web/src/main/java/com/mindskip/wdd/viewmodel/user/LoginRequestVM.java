@@ -1,0 +1,43 @@
+package com.mindskip.wdd.viewmodel.user;
+
+import lombok.Data;
+import org.hibernate.validator.constraints.Length;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
+
+/**
+ * @version 1.7.0
+ * @description: 登录
+ * Copyright (C), 2024, 麒技团队
+ * @date 2024/8/25 10:45
+ */
+@Data
+public class LoginRequestVM {
+    /**
+     * 用户名
+     */
+    @NotBlank(message = "用户名不能为空")
+    @Pattern(regexp = "^[A-Za-z0-9]{5,24}$", message = "用户名由5至24位字母和数字组成")
+    private String userName;
+
+    /**
+     * 密码
+     */
+    @NotBlank(message = "密码不能为空")
+    @Length(min = 5, max = 24, message = "密码长度在5到24个字符之间")
+    private String password;
+
+
+    @NotEmpty
+    @Pattern(regexp = "([0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}?)")
+    private String codeKey;
+
+    /**
+     * 验证码
+     */
+    @NotEmpty
+    @Length(min = 4, max = 4, message = "长度为 4 个字符")
+    private String code;
+}

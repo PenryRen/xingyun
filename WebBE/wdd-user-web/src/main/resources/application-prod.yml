@@ -1,0 +1,64 @@
+#system:
+#  resource:
+#    #本地存储，配合nginx使用
+#    local-store: true
+#    file:
+#      location: /app/course/resource/web-file
+##      url: http://177.17.100.40:6003/ueupload/
+#      url: http://jyptad.ueweixin.com/ueupload/
+#    #违禁词过滤
+#    stop-word-path: /app/course/resource/stop-word
+#    stop-word-enabled: false
+#  # token配置
+#  token:
+#    # 账户单点登录（true单点登录 false多终端登录）
+#    soloLogin: false
+#
+#logging:
+#  file:
+#    path: ./log/ueit-user-web
+#
+#spring:
+#  servlet:
+#    multipart:
+#      location: /app/course/resource/servlet
+#  redis:
+#    host: 192.168.1.228
+#    database: 1
+#  datasource:
+#    url: jdbc:mysql://192.168.1.228:3306/wdd?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true
+#    username: root
+#    password: ueit111111
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+
+system:
+  resource:
+    #本地存储，配合nginx使用
+    local-store: true
+    file:
+      location: /app/course/2024_jypt_cjzf/resource/web-file
+      url: http://192.168.1.210:16003/ueupload/
+    #违禁词过滤
+    stop-word-path: /app/course/2024_jypt_cjzf/resource/stop-word
+    stop-word-enabled: false
+  # token配置
+  token:
+    # 账户单点登录（true单点登录 false多终端登录）
+    soloLogin: false
+
+logging:
+  file:
+    path: ./log/ueit-user-web
+
+spring:
+  servlet:
+    multipart:
+      location: /app/course/2024_jypt_cjzf/resource/servlet
+  redis:
+    host: 192.168.1.228
+    database: 3
+  datasource:
+    url: jdbc:mysql://192.168.1.228:3306/wdd_cjzf?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true
+    username: root
+    password: ueit111111
+    driver-class-name: com.mysql.cj.jdbc.Driver

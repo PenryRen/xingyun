@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ExamPaperDepartmentMapper">
+
+  <insert id="insertList">
+    insert into t_exam_paper_department ( exam_paper_id, department_id, deleted, create_user_id , create_department_id )
+    values
+    <foreach collection="departmentIdList" item="item"   separator=",">
+      (#{examPaperId}, #{item,jdbcType=INTEGER}, 0 , #{createUserId,jdbcType=INTEGER} , #{createDepartmentId,jdbcType=INTEGER})
+    </foreach>
+  </insert>
+
+</mapper>

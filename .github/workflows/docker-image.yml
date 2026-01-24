@@ -1,0 +1,87 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+      - Docker-Dev
+  
+  workflow_dispatch:
+
+env:
+  # 阿里云容器镜像服务 Registry 地址，例如：registry.cn-hangzhou.aliyuncs.com
+  REGISTRY: crpi-8adr4hks4xaiv8hb.cn-hangzhou.personal.cr.aliyuncs.com
+  # 仓库名，例如：your-namespace/xingyun-webfe
+  IMAGE_NAME: renpengyu/xingyun-webfe
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Aliyun Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
+          password: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          # 仓库根目录下的前端项目子目录（请根据实际路径调整）
+          context: ./WebFE
+          file: ./WebFE/docker/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to remote server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          ALIYUN_REGISTRY_USERNAME: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
+          ALIYUN_REGISTRY_PASSWORD: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          password: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: REGISTRY,IMAGE_NAME,ALIYUN_REGISTRY_USERNAME,ALIYUN_REGISTRY_PASSWORD
+          script: |
+            set -e
+            echo "Login to Aliyun Registry..."
+            echo "${ALIYUN_REGISTRY_PASSWORD}" | docker login "${REGISTRY}" -u "${ALIYUN_REGISTRY_USERNAME}" --password-stdin
+
+            IMAGE="${REGISTRY}/${IMAGE_NAME}:latest"
+            echo "Pull image: ${IMAGE}"
+            docker pull "${IMAGE}"
+
+            echo "Stop and remove old container if exists..."
+            docker stop xingyun-webfe || true
+            docker rm xingyun-webfe || true
+
+            echo "Run new container..."
+            docker run -d \
+              --name xingyun-webfe \
+              -p 80:80 \
+              -p 6001:6001 \
+              -p 6003:6003 \
+              "${IMAGE}"
+

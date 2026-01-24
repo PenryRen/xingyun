@@ -27,7 +27,7 @@
     "split.js": "^1.6.5",
     "uuid": "^9.0.0",
     "vite-plugin-html": "^3.2.0",
-    "vue": "3.3.4",
+    "vue": "^3.5.27",
     "vue-plugin-load-script": "^2.1.1",
     "vue-router": "^4.2.4"
   },

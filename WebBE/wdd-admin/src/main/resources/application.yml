@@ -1,5 +1,5 @@
 system:
-  name: 星云智训AI管理平台
+  name: 领航智训AI管理平台
   token-time-to-live: 15d
   security-ignore-urls: >
     - /api/user/login

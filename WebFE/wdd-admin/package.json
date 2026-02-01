@@ -2,7 +2,7 @@
   "name": "ueit-admin",
   "version": "9.5.0",
   "author": "河南财经政法大学麒技团队",
-  "description": "星云教学管理系统",
+  "description": "领航教学管理系统",
   "private": true,
   "scripts": {
     "serve": "vite serve --mode development",

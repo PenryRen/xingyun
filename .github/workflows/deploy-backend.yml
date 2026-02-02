@@ -47,36 +47,36 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  # deploy:
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Deploy to Server via SSH
-  #       uses: appleboy/ssh-action@v0.1.10
-  #       with:
-  #         host: ${{ secrets.HOST }}
-  #         username: ${{ secrets.USERNAME }}
-  #         key: ${{ secrets.SSH_KEY }}
-  #         # port: ${{ secrets.PORT }} # Optional, default is 22
-  #         script: |
-  #           # Login to registry
-  #           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-  #           
-  #           # Pull new image
-  #           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-  #           
-  #           # Stop and remove existing container
-  #           docker stop webbe-user-web || true
-  #           docker rm webbe-user-web || true
-  #           
-  #           # Run new container (Example for user-web module)
-  #           docker run -d \
-  #             --name webbe-user-web \
-  #             --restart unless-stopped \
-  #             -p 8080:8080 \
-  #             -e MODULE_NAME=ueit-user-web \
-  #             -v /etc/localtime:/etc/localtime:ro \
-  #             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-  #             
-  #           # If you need to run other modules, add similar blocks:
-  #           # docker run -d --name webbe-admin ... -e MODULE_NAME=ueit-admin ...
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          # port: ${{ secrets.PORT }} # Optional, default is 22
+          script: |
+            # Login to registry
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Pull new image
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            
+            # Stop and remove existing container
+            docker stop webbe-user-web || true
+            docker rm webbe-user-web || true
+            
+            # Run new container (Example for user-web module)
+            docker run -d \
+              --name webbe-user-web \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              -e MODULE_NAME=ueit-user-web \
+              -v /etc/localtime:/etc/localtime:ro \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+              
+            # If you need to run other modules, add similar blocks:
+            # docker run -d --name webbe-admin ... -e MODULE_NAME=ueit-admin ...

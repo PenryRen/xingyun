@@ -1,5 +1,5 @@
 # Build stage
-FROM maven:3.8.6-openjdk-8-slim AS build
+FROM maven:3.9.6-eclipse-temurin-8 AS build
 WORKDIR /app
 
 # Copy parent pom
@@ -20,7 +20,7 @@ COPY wdd-user-mobile/src wdd-user-mobile/src
 RUN mvn clean package -DskipTests
 
 # Runtime stage
-FROM openjdk:8-jre-slim
+FROM eclipse-temurin:8-jre
 WORKDIR /app
 
 # Argument to specify which module to run (default: ueit-user-web)

@@ -1,0 +1,82 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths:
+      - 'WebBE/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-backend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./WebBE
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # deploy:
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy to Server via SSH
+  #       uses: appleboy/ssh-action@v0.1.10
+  #       with:
+  #         host: ${{ secrets.HOST }}
+  #         username: ${{ secrets.USERNAME }}
+  #         key: ${{ secrets.SSH_KEY }}
+  #         # port: ${{ secrets.PORT }} # Optional, default is 22
+  #         script: |
+  #           # Login to registry
+  #           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  #           
+  #           # Pull new image
+  #           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+  #           
+  #           # Stop and remove existing container
+  #           docker stop webbe-user-web || true
+  #           docker rm webbe-user-web || true
+  #           
+  #           # Run new container (Example for user-web module)
+  #           docker run -d \
+  #             --name webbe-user-web \
+  #             --restart unless-stopped \
+  #             -p 8080:8080 \
+  #             -e MODULE_NAME=ueit-user-web \
+  #             -v /etc/localtime:/etc/localtime:ro \
+  #             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+  #             
+  #           # If you need to run other modules, add similar blocks:
+  #           # docker run -d --name webbe-admin ... -e MODULE_NAME=ueit-admin ...

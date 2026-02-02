@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-backend
+  IMAGE_NAME: ${{ github.repository }}-unified
 
 jobs:
   build-and-push:
@@ -42,7 +42,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./WebBE
+          context: ./
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -73,14 +73,14 @@ jobs:
             echo "Pull image: ${IMAGE}"
             docker pull "${IMAGE}"
             
-            # Run new container
+            # Run unified container
             docker run -d \
-              --name webbe-user-web \
+              --name xingyun-unified \
               --restart unless-stopped \
-              -p 8080:8080 \
-              -e MODULE_NAME=ueit-user-web \
+              -p 80:80 \
+              -p 6001:6001 \
+              -p 6003:6003 \
+              -p 6007:6007 \
               -v /etc/localtime:/etc/localtime:ro \
               ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
               
-            # If you need to run other modules, add similar blocks:
-            # docker run -d --name webbe-admin ... -e MODULE_NAME=ueit-admin ...

@@ -51,25 +51,29 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Server via SSH
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Deploy to remote server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          ALIYUN_REGISTRY_USERNAME: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
+          ALIYUN_REGISTRY_PASSWORD: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          # port: ${{ secrets.PORT }} # Optional, default is 22
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          password: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: REGISTRY,IMAGE_NAME,ALIYUN_REGISTRY_USERNAME,ALIYUN_REGISTRY_PASSWORD
           script: |
-            # Login to registry
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            set -e
+            echo "Login to Aliyun Registry..."
+            echo "${ALIYUN_REGISTRY_PASSWORD}" | docker login "${REGISTRY}" -u "${ALIYUN_REGISTRY_USERNAME}" --password-stdin
+
+            IMAGE="${REGISTRY}/${IMAGE_NAME}:latest"
+            echo "Pull image: ${IMAGE}"
+            docker pull "${IMAGE}"
             
-            # Pull new image
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            
-            # Stop and remove existing container
-            docker stop webbe-user-web || true
-            docker rm webbe-user-web || true
-            
-            # Run new container (Example for user-web module)
+            # Run new container
             docker run -d \
               --name webbe-user-web \
               --restart unless-stopped \

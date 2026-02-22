@@ -1,0 +1,55 @@
+# ===== Stage 1: Build =====
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+
+WORKDIR /app
+
+# 复制 pom
+COPY pom.xml .
+COPY wdd-admin/pom.xml ./wdd-admin/pom.xml
+COPY wdd-user-web/pom.xml ./wdd-user-web/pom.xml
+COPY wdd-user-mobile/pom.xml ./wdd-user-mobile/pom.xml
+
+#下载依赖
+RUN mvn -B -q -e -DskipTests dependency:go-offline
+
+# 复制源码
+COPY ./ ./
+
+# 打包 wdd-admin
+RUN mvn clean package -pl wdd-admin -am -DskipTests
+
+# 打包 wdd-user-web
+RUN mvn clean package -pl wdd-user-web -am -DskipTests
+
+# 打包 wdd-user-mobile
+RUN mvn clean package -pl wdd-user-mobile -am -DskipTests
+
+
+# ===== Stage 2: Runtime =====
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+# 复制 wdd-admin jar
+COPY --from=build /app/wdd-admin/target/*.jar wdd-admin.jar
+
+# 复制 wdd-user-web jar
+COPY --from=build /app/wdd-user-web/target/*.jar wdd-user-web.jar
+
+# 复制 wdd-user-mobile jar
+COPY --from=build /app/wdd-user-mobile/target/*.jar wdd-user-mobile.jar
+
+# JVM 优化参数
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+EXPOSE 16000 16002
+
+# 安装 bash
+RUN apk add --no-cache bash
+# 使用 bash 启动三个服务
+CMD ["bash", "-c", "\
+  java $JAVA_OPTS -jar wdd-admin.jar & \
+  java $JAVA_OPTS -jar wdd-user-web.jar & \
+  java $JAVA_OPTS -jar wdd-user-mobile.jar & \
+  wait \
+"]

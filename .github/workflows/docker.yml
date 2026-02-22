@@ -1,4 +1,4 @@
-name: Build Docker & Release
+name: Build Docker test
 
 on:
   push:
@@ -29,6 +29,4 @@ jobs:
           echo "Building $image from $folder/Dockerfile..."
           docker build -t ${image}:${GITHUB_SHA} ./${folder}
           docker tag ${image}:${GITHUB_SHA} ${image}:latest
-          docker push ${image}:${GITHUB_SHA}
-          docker push ${image}:latest
         done

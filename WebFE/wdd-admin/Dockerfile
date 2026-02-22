@@ -5,11 +5,12 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
+RUN ls -a
 
 # Stage 2: 生产镜像，只运行 serve 提供静态文件
 FROM node:lts-alpine3.22
 WORKDIR /app
-COPY --from=builder /app/wdd-admin/dist ./dist
+COPY --from=builder /app/dist ./dist
 
 # 安装 serve 提供静态文件服务
 RUN npm install -g serve

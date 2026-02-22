@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  admin:
+    build:
+      context: ./WebFE/wdd-admin  # Dockerfile 所在目录
+      dockerfile: Dockerfile
+    image: xingyun/wdd-admin:latest
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  user:
+    build:
+      context: ./WebFE/wdd-user-web
+      dockerfile: Dockerfile
+    image: xingyun/wdd-user-web:latest
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./WebBE
+      dockerfile: Dockerfile
+    image: xingyun/backend:latest
+    ports:
+      - "16000:16000"
+      - "16002:16002"
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./Nginx
+      dockerfile: Dockerfile
+    image: xingyun/nginx:latest
+    ports:
+      - "6001:6001"
+      - "6003:6003"
+    restart: unless-stopped

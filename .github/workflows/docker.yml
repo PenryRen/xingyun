@@ -22,8 +22,7 @@ jobs:
     # 4. 构建所有 Dockerfile
     - name: Build and push Docker images
       run: |
-        # 定义包含 Dockerfile 的文件夹
-        folders=("WebBE" "WebFE/wdd-admin" "WebFE/wdd-user-web") # 修改为你的文件夹名称
+        folders=("WebBE" "WebFE/wdd-admin" "WebFE/wdd-user-web" "Nginx")
         for folder in "${folders[@]}"; do
           image="xingyun"
           echo "Building $image from $folder/Dockerfile..."

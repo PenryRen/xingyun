@@ -25,7 +25,7 @@ jobs:
         # 定义包含 Dockerfile 的文件夹
         folders=("WebBE" "WebFE/wdd-admin" "WebFE/wdd-user-web") # 修改为你的文件夹名称
         for folder in "${folders[@]}"; do
-          image="${folder}"
+          image="xingyun"
           echo "Building $image from $folder/Dockerfile..."
           docker build -t ${image}:${GITHUB_SHA} ./${folder}
           docker tag ${image}:${GITHUB_SHA} ${image}:latest

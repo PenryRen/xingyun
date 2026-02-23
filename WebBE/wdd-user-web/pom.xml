@@ -13,7 +13,7 @@
     <groupId>com.mindskip</groupId>
     <artifactId>ueit-user-web</artifactId>
     <packaging>jar</packaging>
-    <description>麒麟智训AI考试系统</description>
+    <description>领航智训AI考试系统</description>
 
     <dependencies>
         <dependency>

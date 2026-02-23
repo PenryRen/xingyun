@@ -14,7 +14,7 @@
     <groupId>com.mindskip</groupId>
     <artifactId>ueit-admin</artifactId>
     <packaging>jar</packaging>
-    <description>麒麟智训AI教学管理系统</description>
+    <description>领航智训AI教学管理系统</description>
 
 
     <dependencies>

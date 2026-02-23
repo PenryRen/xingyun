@@ -1,4 +1,4 @@
-FROM nginx:stable-alpine3.29-perl
+FROM nginx:stable-alpine3.23-perl
 
 # 删除默认配置
 RUN rm /etc/nginx/nginx.conf

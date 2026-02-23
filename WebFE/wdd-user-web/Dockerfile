@@ -1,5 +1,5 @@
 # ===== Stage 1: Build =====
-FROM node:lts-alpine3.29 AS builder
+FROM node:lts-alpine3.22 AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . .
 RUN npm run build
 
 # ===== Stage 2: Runtime =====
-FROM node:lts-alpine3.29
+FROM node:lts-alpine3.22
 
 WORKDIR /app
 

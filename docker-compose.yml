@@ -1,9 +1,6 @@
-version: "3.9"
-
 services:
-  # MySQL数据库服务
   mysql:
-    image: mysql:8.0.33
+    image: mysql:8.4.0
     container_name: mysql
     ports:
       - "3306:3306"
@@ -22,9 +19,8 @@ services:
       - --default-time-zone=+8:00
     restart: unless-stopped
 
-  # Redis缓存服务
   redis:
-    image: redis:6.2-alpine
+    image: redis:7.4-alpine
     container_name: redis
     ports:
       - "6379:6379"
@@ -44,7 +40,7 @@ services:
       dockerfile: Dockerfile
     image: xingyun/wdd-admin:latest
     ports:
-      - "5000:5000"
+      - "5002:5002"
     restart: unless-stopped
     depends_on:
       - backend

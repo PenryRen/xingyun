@@ -1,31 +1,62 @@
-name: Build Docker test
+name: Test Docker Compose
 
 on:
   push:
-    branches:
-      - main
-      - Docker-Dev
+    branches: [ main, Docker-Dev ]
+  pull_request:
 
 jobs:
-  build-and-release:
+  test-compose:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. 检出仓库
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # 2. 设置 Docker Buildx
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    # 4. 构建所有 Dockerfile
-    - name: Build and push Docker images
-      run: |
-        folders=("WebBE" "WebFE/wdd-admin" "WebFE/wdd-user-web" "Nginx")
-        for folder in "${folders[@]}"; do
-          image="xingyun"
-          echo "Building $image from $folder/Dockerfile..."
-          docker build -t ${image}:${GITHUB_SHA} ./${folder}
-          docker tag ${image}:${GITHUB_SHA} ${image}:latest
-        done
+      - name: Build services
+        run: docker compose build
+
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Wait for service
+        run: |
+          for i in {1..30}; do
+            docker compose ps
+            if curl -f http://localhost:6001; then
+              echo "Service is ready"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Service failed to start"
+          docker compose logs
+          exit 1
+
+      - name: Run user-web test
+        run: |
+          curl -f http://localhost:6001 || exit 1
+      
+      - name: Run admin-web test
+        run: |
+          curl -f http://localhost:6003 || exit 1
+      
+      #目前后端数据库初始化存在问题，暂时不进行测试
+      # - name: Run user-backend test
+      #   run: |
+      #     curl -f http://localhost:16000 || exit 1
+
+      # - name: Run admin-backend test
+      #   run: |
+      #     curl -f http://localhost:16002 || exit 1
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v

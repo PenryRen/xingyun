@@ -1,0 +1,49 @@
+# 核心依赖 - 必需的包
+langchain==1.0.3
+langchain-core==1.0.2
+langchain-openai==1.0.1
+langgraph==1.0.2
+langgraph-checkpoint==3.0.0
+langgraph-checkpoint-postgres==3.0.1
+langgraph-prebuilt==1.0.2
+langgraph-sdk==0.2.9
+
+# Supabase 客户端
+supabase==2.27.3
+postgrest==2.27.3
+realtime==2.27.3
+supabase-auth==2.27.3
+supabase-functions==2.27.3
+
+# Coze SDK
+coze-coding-dev-sdk==0.5.9
+coze-coding-utils==0.2.4
+coze-workload-identity==0.1.4
+
+# Web 框架
+fastapi==0.121.2
+uvicorn==0.38.0
+
+# 数据库
+SQLAlchemy==2.0.44
+psycopg==3.3.0
+psycopg-binary==3.3.0
+psycopg-pool==3.3.0
+alembic==1.16.5
+
+# LLM 相关
+openai==2.24.0
+tiktoken==0.12.0
+
+# 工具库
+pydantic==2.12.3
+pydantic_core==2.41.4
+requests==2.32.5
+httpx==0.28.1
+python-dotenv==1.2.1
+PyYAML==6.0.3
+
+# 其他必需
+typing_extensions==4.15.0
+orjson==3.11.7
+pyjwt==2.10.1

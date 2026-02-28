@@ -2,7 +2,7 @@
   "name": "ueit-user-web",
   "version": "9.5.0",
   "author": "河南财经政法大学麒技团队",
-  "description": "星云员工考试系统",
+  "description": "领航员工考试系统",
   "private": true,
   "scripts": {
     "serve": "vite serve --mode development",
@@ -27,7 +27,7 @@
     "split.js": "^1.6.5",
     "uuid": "^9.0.0",
     "vite-plugin-html": "^3.2.0",
-    "vue": "3.3.4",
+    "vue": "^3.5.27",
     "vue-plugin-load-script": "^2.1.1",
     "vue-router": "^4.2.4"
   },

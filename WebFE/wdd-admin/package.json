@@ -2,7 +2,7 @@
   "name": "ueit-admin",
   "version": "9.5.0",
   "author": "河南财经政法大学麒技团队",
-  "description": "星云教学管理系统",
+  "description": "领航教学管理系统",
   "private": true,
   "scripts": {
     "serve": "vite serve --mode development",
@@ -27,7 +27,7 @@
     "sortablejs": "^1.15.0",
     "uuid": "^9.0.0",
     "vite-plugin-html": "^3.2.0",
-    "vue": "3.3.4",
+    "vue": "^3.5.27",
     "vue-router": "^4.2.4",
     "vuedraggable": "^4.1.0"
   },

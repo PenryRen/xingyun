@@ -1,0 +1,39 @@
+# ===== Stage 1: Build =====
+FROM maven:3.9.9-eclipse-temurin-8 AS build
+
+WORKDIR /app
+
+COPY pom.xml .
+COPY wdd-admin/pom.xml ./wdd-admin/pom.xml
+COPY wdd-user-web/pom.xml ./wdd-user-web/pom.xml
+COPY wdd-user-mobile/pom.xml ./wdd-user-mobile/pom.xml
+
+RUN mvn -B -q -e -DskipTests dependency:go-offline
+
+COPY ./ ./
+
+RUN mvn clean package -pl wdd-admin -am -DskipTests
+
+RUN mvn clean package -pl wdd-user-web -am -DskipTests
+
+RUN mvn clean package -pl wdd-user-mobile -am -DskipTests
+
+
+# ===== Stage 2: Runtime =====
+FROM eclipse-temurin:8-jre-ubi9-minimal
+
+WORKDIR /app
+
+COPY --from=build /app/wdd-admin/target/*.jar wdd-admin.jar
+
+COPY --from=build /app/wdd-user-web/target/*.jar wdd-user-web.jar
+
+COPY --from=build /app/wdd-user-mobile/target/*.jar wdd-user-mobile.jar
+
+EXPOSE 16000 16002
+
+COPY start.sh .
+
+RUN  chmod +x start.sh
+
+CMD ["./start.sh"]

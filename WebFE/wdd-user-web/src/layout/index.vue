@@ -28,16 +28,16 @@
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="$router.push({path:'/user/index'})">个人信息</el-dropdown-item>
-              <el-dropdown-item @click="$router.push({path:'/user/update'})">更新信息</el-dropdown-item>
-              <el-dropdown-item @click="$router.push({path:'/user/passwordChange'})">修改密码
+              <el-dropdown-item @click="router.push({path:'/user/index'})">个人信息</el-dropdown-item>
+              <el-dropdown-item @click="router.push({path:'/user/update'})">更新信息</el-dropdown-item>
+              <el-dropdown-item @click="router.push({path:'/user/passwordChange'})">修改密码
               </el-dropdown-item>
-              <el-dropdown-item @click="$router.push({path:'/user/apply'})">我的报名</el-dropdown-item>
-              <el-dropdown-item @click="$router.push({path:'/user/comment'})">我的评论</el-dropdown-item>
-              <el-dropdown-item @click="$router.push({path:'/user/train'})">我的培训</el-dropdown-item>
-              <el-dropdown-item @click="$router.push({path:'/user/credential'})">我的证书
+              <el-dropdown-item @click="router.push({path:'/user/apply'})">我的报名</el-dropdown-item>
+              <el-dropdown-item @click="router.push({path:'/user/comment'})">我的评论</el-dropdown-item>
+              <el-dropdown-item @click="router.push({path:'/user/train'})">我的培训</el-dropdown-item>
+              <el-dropdown-item @click="router.push({path:'/user/credential'})">我的证书
               </el-dropdown-item>
-              <el-dropdown-item @click="$router.push({path:'/user/event'})">个人动态</el-dropdown-item>
+              <el-dropdown-item @click="router.push({path:'/user/event'})">个人动态</el-dropdown-item>
               <el-dropdown-item @click="logout" divided>退出</el-dropdown-item>
             </el-dropdown-menu>
           </template>

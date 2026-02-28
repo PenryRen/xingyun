@@ -11,7 +11,20 @@ export default ({mode}: ConfigEnv): UserConfig => {
 
   return {
     build: {
-      outDir: 'ueit-user-web'
+      outDir: 'ueit-user-web',
+      // 通过手动拆分 chunk 优化首屏体积与缓存
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Vue 核心相关依赖
+            vue: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
+            // UI 组件库单独拆包
+            'element-plus': ['element-plus', '@element-plus/icons-vue']
+          }
+        }
+      },
+      // 适当调高警告阈值，避免频繁告警（仅影响提示，不影响实际构建）
+      chunkSizeWarningLimit: 1500
     },
     server: {
       host: '0.0.0.0',

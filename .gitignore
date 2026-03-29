@@ -5,3 +5,7 @@
 *.ipr
 ### VsCode ###
 .vscode
+
+### WebFE 构建产物 ###
+WebFE/target/
+WebFE/webfe-*.tar.gz

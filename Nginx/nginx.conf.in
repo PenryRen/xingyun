@@ -1,4 +1,6 @@
-#为nginx自动分配核心
+# 完整主配置模板：由 Base/install-nginx.sh 将 @@INSTALL_ROOT@@ 替换为安装根目录后写入 /etc/nginx/nginx.conf
+# 目录约定与 install.sh 一致：INSTALL_PREFIX/web/{ueit-user-web,ueit-admin}、INSTALL_PREFIX/resource/web-file
+
 worker_processes auto;
 
 events {
@@ -10,36 +12,29 @@ http {
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
 
-    #日志输出到 stdout
-    #access_log  /dev/stdout;
-    #error_log   /dev/stderr warn;
-
     sendfile on;
     tcp_nopush on;
     tcp_nodelay on;
     keepalive_timeout 65;
     types_hash_max_size 2048;
 
-    # gzip 优化
     gzip on;
     gzip_comp_level 5;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
-    # ==================================================
-    # 学生端
-    # ==================================================
     server {
         listen 6001;
         server_name ueit-user-web;
 
+        root @@INSTALL_ROOT@@/web/ueit-user-web;
+        index index.html;
+
         client_max_body_size 20m;
 
         location / {
-            proxy_pass http://127.0.0.1:5001/;
-            proxy_set_header Host $host;
+            try_files $uri $uri/ /index.html;
         }
 
-        # API 反向代理
         location /api/ {
             proxy_pass http://127.0.0.1:16000;
 
@@ -51,9 +46,8 @@ http {
             proxy_read_timeout 60;
         }
 
-        # 上传资源
         location /ueupload/ {
-            alias /usr/share/nginx/html/resource/web-file/;
+            alias @@INSTALL_ROOT@@/resource/web-file/;
         }
 
         error_page 500 502 503 504 /50x.html;
@@ -62,18 +56,17 @@ http {
         }
     }
 
-    # ==================================================
-    # 管理端
-    # ==================================================
     server {
         listen 6003;
         server_name ueit-admin;
 
+        root @@INSTALL_ROOT@@/web/ueit-admin;
+        index index.html;
+
         client_max_body_size 1024m;
 
         location / {
-            proxy_pass http://127.0.0.1:5002/;
-            proxy_set_header Host $host;
+            try_files $uri $uri/ /index.html;
         }
 
         location /api/ {
@@ -88,7 +81,7 @@ http {
         }
 
         location /ueupload/ {
-            alias /usr/share/nginx/html/resource/web-file/;
+            alias @@INSTALL_ROOT@@/resource/web-file/;
         }
 
         error_page 500 502 503 504 /50x.html;

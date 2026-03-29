@@ -25,6 +25,9 @@ target
 /.nb-gradle/
 
 
+### build output ###
+/webbe-*.tar.gz
+
 ### Customer ###
 /wdd-user-web/log/
 /wdd-user-mobile/log/

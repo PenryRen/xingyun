@@ -27,6 +27,8 @@
         <org.apache.commons.lang3>3.12.0</org.apache.commons.lang3>
         <cn.hutool.version>5.7.7</cn.hutool.version>
         <com.github.penggle.kaptcha>2.3.2</com.github.penggle.kaptcha>
+        <lombok.version>1.18.34</lombok.version>
+        <lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
         <mysql.version>8.0.33</mysql.version>
         <com.qcloud.version>5.6.39</com.qcloud.version>
         <mybatis.plus.version>3.5.3.1</mybatis.plus.version>
@@ -63,7 +65,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.8</version>
+            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -99,42 +101,31 @@
     <build>
         <plugins>
             <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="target"/>
-                                <copy todir="target" overwrite="true">
-                                    <fileset dir="${project.basedir}\wdd-user-web\target" erroronmissingdir="false">
-                                        <include name="*.jar"/>
-                                    </fileset>
-                                    <fileset dir="${project.basedir}\wdd-user-mobile\target" erroronmissingdir="false">
-                                        <include name="*.jar"/>
-                                    </fileset>
-                                    <fileset dir="${project.basedir}\wdd-admin\target" erroronmissingdir="false">
-                                        <include name="*.jar"/>
-                                    </fileset>
-                                </copy>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <compilerArgs>
                         <arg>-Xlint:unchecked</arg>
                         <arg>-Xlint:deprecation</arg>
                     </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>${lombok.mapstruct.binding.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${org.mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

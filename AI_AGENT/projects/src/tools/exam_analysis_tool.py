@@ -4,10 +4,9 @@
 import json
 from langchain.tools import tool
 from langchain.tools import ToolRuntime
-from coze_coding_utils.runtime_ctx.context import new_context
-from coze_coding_dev_sdk import LLMClient
 from langchain_core.messages import SystemMessage, HumanMessage
 from storage.database.supabase_client import get_supabase_client
+from models.model_manager import ModelManager
 
 
 @tool
@@ -34,16 +33,17 @@ def analyze_exam_paper(
     返回:
         分析报告，包含薄弱知识点、错题统计、改进建议等
     """
-    ctx = runtime.context if runtime else new_context(method="analyze_exam_paper")
-    
     # 解析考试数据
     try:
         exam_info = json.loads(exam_data)
     except json.JSONDecodeError:
         return "错误：试卷数据格式不正确，必须是JSON格式"
     
-    # 使用LLM分析试卷
-    client = LLMClient(ctx=ctx)
+    # 使用ModelManager获取LLM
+    llm = ModelManager.get_llm(
+        use_local=False,  # 分析任务使用远程模型更可靠
+        temperature=0.3
+    )
     
     system_prompt = """你是一位专业的教育分析师，擅长分析学生的考试表现并识别薄弱知识点。
 
@@ -91,28 +91,9 @@ def analyze_exam_paper(
         HumanMessage(content=human_message)
     ]
     
-    response = client.invoke(
-        messages=messages,
-        model="doubao-seed-2-0-pro-260215",
-        temperature=0.3
-    )
-    
-    # 提取文本内容
-    def get_text_content(content):
-        if isinstance(content, str):
-            return content
-        elif isinstance(content, list):
-            if content and isinstance(content[0], str):
-                return " ".join(content)
-            else:
-                text_parts = []
-                for item in content:
-                    if isinstance(item, dict) and item.get("type") == "text":
-                        text_parts.append(item.get("text", ""))
-                return " ".join(text_parts)
-        return str(content)
-    
-    analysis_text = get_text_content(response.content)
+    # 直接使用llm调用
+    response = llm.invoke(messages)
+    analysis_text = response.content
     
     return analysis_text
 
@@ -129,8 +110,7 @@ def get_student_weak_points(student_name: str, student_id: str, runtime: ToolRun
     返回:
         该学生历次考试中识别出的薄弱知识点及变化趋势
     """
-    ctx = runtime.context if runtime else new_context(method="get_student_weak_points")
-    
+    # 移除对coze_coding_utils的依赖
     client = get_supabase_client()
     
     # 查询学生信息

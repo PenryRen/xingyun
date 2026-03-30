@@ -5,7 +5,6 @@ import json
 from datetime import datetime
 from langchain.tools import tool
 from langchain.tools import ToolRuntime
-from coze_coding_utils.runtime_ctx.context import new_context
 from storage.database.supabase_client import get_supabase_client
 
 
@@ -20,8 +19,7 @@ def add_questions_to_database(questions_data: str, runtime: ToolRuntime = None) 
     返回:
         添加结果
     """
-    ctx = runtime.context if runtime else new_context(method="add_questions_to_database")
-    
+    # 移除对coze_coding_utils的依赖
     try:
         questions_list = json.loads(questions_data)
     except json.JSONDecodeError:
@@ -192,8 +190,7 @@ def get_question_bank(topic: str = None, category: str = None, runtime: ToolRunt
     返回:
         题目列表
     """
-    ctx = runtime.context if runtime else new_context(method="get_question_bank")
-    
+    # 移除对coze_coding_utils的依赖
     client = get_supabase_client()
     
     query = client.table('questions').select('*')

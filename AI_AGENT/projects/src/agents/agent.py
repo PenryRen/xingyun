@@ -10,12 +10,11 @@ import os
 import json
 from typing import Annotated, Optional
 from langchain.agents import create_agent
-from langchain_openai import ChatOpenAI
 from langgraph.graph import MessagesState
 from langgraph.graph.message import add_messages
 from langchain_core.messages import AnyMessage
-from coze_coding_utils.runtime_ctx.context import default_headers, new_context
 from storage.memory.memory_saver import get_memory_saver
+from models.model_manager import ModelManager
 
 # 导入工具
 from tools.exam_analysis_tool import analyze_exam_paper, get_student_weak_points
@@ -45,38 +44,48 @@ def _windowed_messages(old, new):
 class AgentState(MessagesState):
     messages: Annotated[list[AnyMessage], _windowed_messages]
 
-def build_agent(ctx=None):
+def build_agent(use_local: bool = False, ctx=None):
     """
     构建教育平台多智能体系统
     
     这个Agent集成了四大功能模块，通过System Prompt和工具调用
     来实现不同的教育功能。
+    
+    Args:
+        use_local: 是否使用本地模型
+        ctx: 上下文信息（可选）
     """
-    workspace_path = os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects")
+    workspace_path = os.getenv("WORKSPACE_PATH", os.getcwd())
     
     # 使用默认配置（办学助手作为默认模式）
     config_path = os.path.join(workspace_path, "config/teaching_assistant_config.json")
     
-    with open(config_path, 'r', encoding='utf-8') as f:
-        cfg = json.load(f)
+    if os.path.exists(config_path):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+        model_name = cfg['config'].get("model")
+        temperature = cfg['config'].get('temperature', 0.7)
+        timeout = cfg['config'].get('timeout', 600)
+    else:
+        # 配置文件不存在时使用默认值
+        model_name = None
+        temperature = 0.7
+        timeout = 600
     
-    api_key = os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY")
-    base_url = os.getenv("COZE_INTEGRATION_MODEL_BASE_URL")
-    
-    llm = ChatOpenAI(
-        model=cfg['config'].get("model"),
-        api_key=api_key,
-        base_url=base_url,
-        temperature=cfg['config'].get('temperature', 0.7),
+    # 使用模型管理器初始化模型
+    llm = ModelManager.get_llm(
+        use_local=use_local,
+        model_name=model_name,
+        temperature=temperature,
         streaming=True,
-        timeout=cfg['config'].get('timeout', 600),
-        extra_body={
-            "thinking": {
-                "type": cfg['config'].get('thinking', 'disabled')
-            }
-        },
-        default_headers=default_headers(ctx) if ctx else {}
+        timeout=timeout
     )
+    
+    # 导入各个模块的Agent构建函数
+    from .exam_analysis_agent import build_exam_analysis_agent
+    from .learning_profile_agent import build_learning_profile_agent
+    from .learning_assessment_agent import build_learning_assessment_agent
+    from .teaching_assistant_agent import build_teaching_assistant_agent
     
     # 定义所有可用工具
     tools = [
@@ -186,3 +195,39 @@ def build_agent(ctx=None):
         checkpointer=get_memory_saver(),
         state_schema=AgentState,
     )
+
+def get_agent_by_request(request: str, use_local: bool = False):
+    """
+    根据用户请求选择合适的Agent模块
+    
+    Args:
+        request: 用户的请求内容
+        use_local: 是否使用本地模型
+    
+    Returns:
+        对应的Agent实例
+    """
+    # 导入各个模块的Agent构建函数
+    from .exam_analysis_agent import build_exam_analysis_agent
+    from .learning_profile_agent import build_learning_profile_agent
+    from .learning_assessment_agent import build_learning_assessment_agent
+    from .teaching_assistant_agent import build_teaching_assistant_agent
+    
+    # 关键词匹配
+    request_lower = request.lower()
+    
+    # 考试分析模块关键词
+    if any(keyword in request_lower for keyword in ["分析", "试卷", "薄弱点", "错题", "考试"]):
+        return build_exam_analysis_agent(use_local=use_local)
+    
+    # 学情分析模块关键词
+    elif any(keyword in request_lower for keyword in ["档案", "学情", "记录", "进度", "学习档案"]):
+        return build_learning_profile_agent(use_local=use_local)
+    
+    # 学情检测模块关键词
+    elif any(keyword in request_lower for keyword in ["试卷", "测试", "组卷", "强化", "题库"]):
+        return build_learning_assessment_agent(use_local=use_local)
+    
+    # 办学助手模块（默认）
+    else:
+        return build_teaching_assistant_agent(use_local=use_local)

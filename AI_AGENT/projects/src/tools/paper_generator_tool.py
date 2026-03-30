@@ -5,10 +5,9 @@ import json
 import random
 from langchain.tools import tool
 from langchain.tools import ToolRuntime
-from coze_coding_utils.runtime_ctx.context import new_context
-from coze_coding_dev_sdk import LLMClient
 from langchain_core.messages import SystemMessage, HumanMessage
 from storage.database.supabase_client import get_supabase_client
+from models.model_manager import ModelManager
 
 
 @tool
@@ -35,8 +34,7 @@ def generate_intelligent_paper(
     返回:
         生成的试卷，包含题目列表和参考答案
     """
-    ctx = runtime.context if runtime else new_context(method="generate_intelligent_paper")
-    
+    # 移除对coze_coding_utils的依赖
     client = get_supabase_client()
     
     # 查询题库
@@ -154,8 +152,7 @@ def generate_enhanced_paper_by_weak_points(
     返回:
         针对薄弱点的强化测试试卷
     """
-    ctx = runtime.context if runtime else new_context(method="generate_enhanced_paper_by_weak_points")
-    
+    # 移除对coze_coding_utils的依赖
     try:
         weak_points_list = json.loads(weak_points)
     except json.JSONDecodeError:

@@ -5,10 +5,9 @@ import json
 from datetime import datetime
 from langchain.tools import tool
 from langchain.tools import ToolRuntime
-from coze_coding_utils.runtime_ctx.context import new_context
-from coze_coding_dev_sdk import LLMClient
 from langchain_core.messages import SystemMessage, HumanMessage
 from storage.database.supabase_client import get_supabase_client
+from models.model_manager import ModelManager
 
 
 @tool
@@ -31,8 +30,7 @@ def create_student_profile(
     返回:
         创建结果
     """
-    ctx = runtime.context if runtime else new_context(method="create_student_profile")
-    
+    # 移除对coze_coding_utils的依赖
     client = get_supabase_client()
     
     # 检查学生是否已存在
@@ -143,8 +141,7 @@ def get_student_learning_profile(student_name: str, student_id: str, runtime: To
     返回:
         学情档案详情
     """
-    ctx = runtime.context if runtime else new_context(method="get_student_learning_profile")
-    
+    # 移除对coze_coding_utils的依赖
     client = get_supabase_client()
     
     # 查询学生

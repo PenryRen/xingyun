@@ -16,24 +16,21 @@ except Exception:
 
 def get_db_url() -> str:
     """Build database URL from environment."""
-    url = os.getenv("PGDATABASE_URL") or ""
+    # 达梦数据库连接字符串格式:
+    # dm://username:password@host:port/database
+    url = os.getenv("DM_DATABASE_URL") or ""
     if url is not None and url != "":
         return url
-    from coze_workload_identity import Client
-    try:
-        client = Client()
-        env_vars = client.get_project_env_vars()
-        client.close()
-        for env_var in env_vars:
-            if env_var.key == "PGDATABASE_URL":
-                url = env_var.value.replace("'", "'\\''")
-                return url
-    except Exception as e:
-        logger.error(f"Error loading PGDATABASE_URL: {e}")
-        raise e
-    finally:
-        if url is None or url == "":
-            logger.error("PGDATABASE_URL is not set")
+    
+    # 从环境变量构建连接字符串
+    username = os.getenv("DM_USERNAME", "SYSDBA")
+    password = os.getenv("DM_PASSWORD", "SYSDBA")
+    host = os.getenv("DM_HOST", "localhost")
+    port = os.getenv("DM_PORT", "5236")
+    database = os.getenv("DM_DATABASE", "SYSDBA")
+    
+    url = f"dm://{username}:{password}@{host}:{port}/{database}"
+    logger.info(f"Using DM database URL: dm://{username}:***@{host}:{port}/{database}")
     return url
 _engine = None
 _SessionLocal = None
@@ -41,8 +38,8 @@ _SessionLocal = None
 def _create_engine_with_retry():
     url = get_db_url()
     if url is None or url == "":
-        logger.error("PGDATABASE_URL is not set")
-        raise ValueError("PGDATABASE_URL is not set")
+        logger.error("DM_DATABASE_URL is not set")
+        raise ValueError("DM_DATABASE_URL is not set")
     size = 100
     overflow = 100
     recycle = 1800
@@ -92,3 +89,4 @@ __all__ = [
     "get_sessionmaker",
     "get_session",
 ]
+

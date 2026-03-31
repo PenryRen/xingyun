@@ -29,11 +29,12 @@ class ModelManager:
         Returns:
             语言模型实例
         """
-        # 优先使用远程模型（OpenAI 兼容接口）
+        
+        ##优先使用远程模型（OpenAI 兼容接口）
         try:
             api_key = os.getenv("OPENAI_API_KEY", os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY"))
             base_url = os.getenv("OPENAI_BASE_URL", os.getenv("COZE_INTEGRATION_MODEL_BASE_URL"))
-            
+
             # 检查远程模型配置是否完整
             if not api_key:
                 raise Exception("远程模型 API 密钥未配置")

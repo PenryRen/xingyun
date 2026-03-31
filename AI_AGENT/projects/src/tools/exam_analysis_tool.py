@@ -4,10 +4,14 @@
 import json
 from langchain.tools import tool
 from langchain.tools import ToolRuntime
-from coze_coding_utils.runtime_ctx.context import new_context
-from coze_coding_dev_sdk import LLMClient
 from langchain_core.messages import SystemMessage, HumanMessage
-from storage.database.supabase_client import get_supabase_client
+from tools.data_base_tools import (
+    get_student_by_student_id,
+    get_student_exams,
+    get_learning_profile,
+    model_to_dict
+)
+from models.model_manager import ModelManager
 
 
 @tool
@@ -34,16 +38,17 @@ def analyze_exam_paper(
     返回:
         分析报告，包含薄弱知识点、错题统计、改进建议等
     """
-    ctx = runtime.context if runtime else new_context(method="analyze_exam_paper")
-    
     # 解析考试数据
     try:
         exam_info = json.loads(exam_data)
     except json.JSONDecodeError:
         return "错误：试卷数据格式不正确，必须是JSON格式"
     
-    # 使用LLM分析试卷
-    client = LLMClient(ctx=ctx)
+    # 使用ModelManager获取LLM
+    llm = ModelManager.get_llm(
+        use_local=False,  # 分析任务使用远程模型更可靠
+        temperature=0.3
+    )
     
     system_prompt = """你是一位专业的教育分析师，擅长分析学生的考试表现并识别薄弱知识点。
 
@@ -91,28 +96,9 @@ def analyze_exam_paper(
         HumanMessage(content=human_message)
     ]
     
-    response = client.invoke(
-        messages=messages,
-        model="doubao-seed-2-0-pro-260215",
-        temperature=0.3
-    )
-    
-    # 提取文本内容
-    def get_text_content(content):
-        if isinstance(content, str):
-            return content
-        elif isinstance(content, list):
-            if content and isinstance(content[0], str):
-                return " ".join(content)
-            else:
-                text_parts = []
-                for item in content:
-                    if isinstance(item, dict) and item.get("type") == "text":
-                        text_parts.append(item.get("text", ""))
-                return " ".join(text_parts)
-        return str(content)
-    
-    analysis_text = get_text_content(response.content)
+    # 直接使用llm调用
+    response = llm.invoke(messages)
+    analysis_text = response.content
     
     return analysis_text
 
@@ -129,49 +115,48 @@ def get_student_weak_points(student_name: str, student_id: str, runtime: ToolRun
     返回:
         该学生历次考试中识别出的薄弱知识点及变化趋势
     """
-    ctx = runtime.context if runtime else new_context(method="get_student_weak_points")
-    
-    client = get_supabase_client()
-    
     # 查询学生信息
-    student_response = client.table('students').select('*').eq('student_id', student_id).execute()
+    student = get_student_by_student_id(student_id)
     
-    if not student_response.data:
+    if not student:
         return f"未找到学号为 {student_id} 的学生记录"
     
-    student = student_response.data[0]
-    student_db_id = student['id']
-    
     # 查询该学生的所有考试记录
-    exam_response = client.table('exam_records').select('*').eq('student_id', student_db_id).order('exam_date', desc=True).execute()
+    exams = get_student_exams(student.id, limit=100)
     
-    if not exam_response.data:
+    if not exams:
         return f"学生 {student_name} 暂无考试记录"
     
     # 查询学情档案
-    profile_response = client.table('learning_profiles').select('*').eq('student_id', student_db_id).execute()
+    profile = get_learning_profile(student.id)
     
     weak_points_history = []
-    for exam in exam_response.data:
-        exam_id = exam['id']
-        exam_name = exam['exam_name']
-        exam_date = exam['exam_date']
-        total_score = exam['total_score']
-        max_score = exam['max_score']
-        
+    for exam in exams:
+        exam_data = model_to_dict(exam)
         weak_points_history.append({
-            "exam_name": str(exam_name),
-            "exam_date": str(exam_date) if exam_date else "",
-            "score": f"{total_score}/{max_score}",
-            "rate": round(total_score / max_score * 100, 2) if max_score and max_score > 0 else 0
+            "exam_name": str(exam_data.get('exam_name', '')),
+            "exam_date": str(exam_data.get('exam_date', '')) if exam_data.get('exam_date') else "",
+            "score": f"{exam_data.get('total_score', 0)}/{exam_data.get('max_score', 0)}",
+            "rate": round(exam_data.get('total_score', 0) / exam_data.get('max_score', 1) * 100, 2) if exam_data.get('max_score', 0) > 0 else 0
         })
+    
+    # 解析JSON字段
+    current_weak_points = []
+    mastered_points = []
+    if profile:
+        try:
+            current_weak_points = json.loads(profile.weak_points) if profile.weak_points else []
+            mastered_points = json.loads(profile.mastered_points) if profile.mastered_points else []
+        except json.JSONDecodeError:
+            current_weak_points = []
+            mastered_points = []
     
     result = {
         "student_name": student_name,
         "student_id": student_id,
         "exam_history": weak_points_history,
-        "current_weak_points": list(profile_response.data[0]['weak_points']) if profile_response.data else [],
-        "mastered_points": list(profile_response.data[0]['mastered_points']) if profile_response.data else []
+        "current_weak_points": current_weak_points,
+        "mastered_points": mastered_points
     }
     
     return json.dumps(result, ensure_ascii=False, indent=2)

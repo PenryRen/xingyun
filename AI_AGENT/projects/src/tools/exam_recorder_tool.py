@@ -1,12 +1,16 @@
 """
-试卷入库工具 - 将试卷和答案记录到数据库
+考试记录工具 - 记录学生的考试成绩和分析
 """
 import json
 from datetime import datetime
 from langchain.tools import tool
 from langchain.tools import ToolRuntime
-from coze_coding_utils.runtime_ctx.context import new_context
-from storage.database.supabase_client import get_supabase_client
+from tools.data_base_tools import (
+    get_student_by_student_id,
+    create_exam_record,
+    get_student_exams,
+    model_to_dict
+)
 
 
 @tool
@@ -20,8 +24,6 @@ def add_questions_to_database(questions_data: str, runtime: ToolRuntime = None) 
     返回:
         添加结果
     """
-    ctx = runtime.context if runtime else new_context(method="add_questions_to_database")
-    
     try:
         questions_list = json.loads(questions_data)
     except json.JSONDecodeError:
@@ -30,8 +32,7 @@ def add_questions_to_database(questions_data: str, runtime: ToolRuntime = None) 
     if not isinstance(questions_list, list):
         return "错误：题目数据必须是数组格式"
     
-    client = get_supabase_client()
-    
+    from tools.data_base_tools import create_question
     success_count = 0
     failed_questions = []
     
@@ -49,15 +50,24 @@ def add_questions_to_database(questions_data: str, runtime: ToolRuntime = None) 
         try:
             question_data = {
                 "question_text": q['question_text'],
-                "category": q['category'],
-                "difficulty": float(q['difficulty']),
-                "answer": q['answer'],
-                "explanation": q.get('explanation', ''),
-                "tags": q.get('tags', {})
+                "question_type": q.get('question_type', 'multiple_choice'),
+                "difficulty": q['difficulty'],
+                "subject": q.get('category', 'general'),
+                "knowledge_points": json.dumps(q.get('tags', {})),
+                "options": json.dumps(q.get('options', [])),
+                "correct_answer": q['answer'],
+                "answer_analysis": q.get('explanation', ''),
+                "created_at": datetime.now()
             }
             
-            client.table('questions').insert(question_data).execute()
-            success_count += 1
+            result = create_question(**question_data)
+            if result:
+                success_count += 1
+            else:
+                failed_questions.append({
+                    "question_text": q.get('question_text', '')[:50],
+                    "reason": "添加失败"
+                })
         except Exception as e:
             failed_questions.append({
                 "question_text": q.get('question_text', '')[:50],
@@ -98,55 +108,48 @@ def record_exam_result(
     返回:
         记录结果
     """
-    ctx = runtime.context if runtime else new_context(method="record_exam_result")
-    
-    client = get_supabase_client()
-    
     try:
         exam_info = json.loads(exam_data)
     except json.JSONDecodeError:
         return "错误：试卷数据格式不正确，必须是JSON格式"
     
     # 查询或创建学生
-    student_response = client.table('students').select('*').eq('student_id', student_id).execute()
+    student = get_student_by_student_id(student_id)
     
-    if not student_response.data:
+    if not student:
         # 创建学生记录
-        student_data = {
-            "name": str(student_name),
-            "student_id": str(student_id)
-        }
-        student_response = client.table('students').insert(student_data).execute()
-        student_id_db = int(student_response.data[0].get('id', 0)) if student_response.data[0].get('id') is not None else 0
+        from tools.data_base_tools import create_student, create_learning_profile
+        student = create_student(
+            student_name=student_name,
+            student_id=student_id
+        )
+        if not student:
+            return "创建学生记录失败"
         
         # 创建学情档案
-        profile_data = {
-            "student_id": student_id_db,
-            "weak_points": [],
-            "mastered_points": []
-        }
-        client.table('learning_profiles').insert(profile_data).execute()
-    else:
-        student_id_db = int(student_response.data[0].get('id', 0)) if student_response.data[0].get('id') is not None else 0
+        profile = create_learning_profile(student.id)
+        if not profile:
+            return "创建学情档案失败"
     
     # 创建考试记录
-    exam_record_data = {
-        "student_id": student_id_db,
-        "exam_name": str(exam_name),
-        "exam_date": datetime.now().isoformat(),
-        "total_score": float(total_score),
-        "max_score": float(max_score)
-    }
+    exam_record = create_exam_record(
+        student_id=student.id,
+        exam_name=exam_name,
+        total_score=total_score,
+        max_score=max_score,
+        exam_date=datetime.now()
+    )
     
-    exam_record_response = client.table('exam_records').insert(exam_record_data).execute()
-    exam_record_id = exam_record_response.data[0]['id']
+    if not exam_record:
+        return "创建考试记录失败"
     
     # 记录答题记录
-    answer_records = []
+    answer_records_count = 0
     
     # 假设 exam_data 是一个数组，每个元素包含题目ID和学生答案
     if isinstance(exam_info, list):
-        for idx, item in enumerate(exam_info):
+        from tools.data_base_tools import create_answer_record
+        for item in exam_info:
             question_id = item.get('question_id')
             student_answer = str(item.get('student_answer', ''))
             correct_answer = str(item.get('correct_answer', ''))
@@ -155,26 +158,22 @@ def record_exam_result(
             if question_id:
                 is_correct = str(student_answer).strip().lower() == str(correct_answer).strip().lower()
                 
-                answer_record_data = {
-                    "exam_record_id": exam_record_id,
-                    "question_id": int(question_id),
-                    "student_answer": student_answer,
-                    "is_correct": is_correct,
-                    "score": float(score)
-                }
-                
-                answer_records.append(answer_record_data)
-    
-    # 批量插入答题记录
-    if answer_records:
-        client.table('answer_records').insert(answer_records).execute()
+                answer_record = create_answer_record(
+                    exam_record_id=exam_record.id,
+                    question_id=question_id,
+                    student_answer=student_answer,
+                    is_correct=is_correct,
+                    score=score
+                )
+                if answer_record:
+                    answer_records_count += 1
     
     result = {
-        "exam_record_id": exam_record_id,
+        "exam_record_id": exam_record.id,
         "exam_name": exam_name,
         "student_id": student_id,
         "total_score": f"{total_score}/{max_score}",
-        "answer_records_count": len(answer_records)
+        "answer_records_count": answer_records_count
     }
     
     return json.dumps(result, ensure_ascii=False, indent=2)
@@ -192,23 +191,28 @@ def get_question_bank(topic: str = None, category: str = None, runtime: ToolRunt
     返回:
         题目列表
     """
-    ctx = runtime.context if runtime else new_context(method="get_question_bank")
+    from tools.data_base_tools import get_questions
     
-    client = get_supabase_client()
+    # 查询题目
+    questions = get_questions(topic=topic, subject=category, limit=100)
+    question_data = [model_to_dict(q) for q in questions]
     
-    query = client.table('questions').select('*')
-    
-    if topic:
-        query = query.ilike('question_text', f'%{topic}%')
-    
-    if category:
-        query = query.ilike('category', f'%{category}%')
-    
-    response = query.limit(100).execute()
+    # 解析JSON字段
+    for q in question_data:
+        if 'knowledge_points' in q and q['knowledge_points']:
+            try:
+                q['knowledge_points'] = json.loads(q['knowledge_points'])
+            except json.JSONDecodeError:
+                q['knowledge_points'] = {}
+        if 'options' in q and q['options']:
+            try:
+                q['options'] = json.loads(q['options'])
+            except json.JSONDecodeError:
+                q['options'] = []
     
     result = {
-        "total": len(response.data),
-        "questions": response.data
+        "total": len(question_data),
+        "questions": question_data
     }
     
     return json.dumps(result, ensure_ascii=False, indent=2)

@@ -1,12 +1,14 @@
-from coze_coding_dev_sdk.database import Base
+from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, Double, Integer, Numeric, PrimaryKeyConstraint, Table, Text, text, String, Float, ForeignKey, JSON, func, Index
-from sqlalchemy.dialects.postgresql import OID
 from sqlalchemy.orm import relationship
-from typing import Optional
+from typing import Optional, List
 import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column
+
+# 创建基础模型类
+Base = declarative_base()
 
 class HealthCheck(Base):
     __tablename__ = 'health_check'
@@ -112,7 +114,7 @@ class Question(Base):
     difficulty: Mapped[float] = mapped_column(Float, nullable=False, comment="难度系数(0.0-1.0)")
     answer: Mapped[str] = mapped_column(Text, nullable=False, comment="正确答案")
     explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="题目解析")
-    tags: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, comment="标签(JSON格式)")
+    tags: Mapped[Optional[dict]] = mapped_column(Text, nullable=True, comment="标签(JSON格式)")
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
     
     # 关系
@@ -174,8 +176,8 @@ class LearningProfile(Base):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="学情档案ID")
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey('students.id'), unique=True, nullable=False, comment="学生ID")
-    weak_points: Mapped[list] = mapped_column(JSON, nullable=False, comment="薄弱知识点(JSON数组)")
-    mastered_points: Mapped[list] = mapped_column(JSON, nullable=False, comment="已掌握知识点(JSON数组)")
+    weak_points: Mapped[Optional[str]] = mapped_column(Text, nullable=False, comment="薄弱知识点(JSON数组)")
+    mastered_points: Mapped[Optional[str]] = mapped_column(Text, nullable=False, comment="已掌握知识点(JSON数组)")
     overall_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True, comment="综合评分(0.0-100.0)")
     last_update: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="最后更新时间")
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")

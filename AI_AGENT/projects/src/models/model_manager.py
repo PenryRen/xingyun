@@ -1,16 +1,36 @@
 import os
 from typing import Optional, Dict, Any
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.llms import HuggingFaceHub
-from langchain_community.chat_models import ChatHuggingFace
-from langchain_community.embeddings import HuggingFaceEmbeddings
+
+# 尝试导入 Ollama 相关模块
+try:
+    from langchain_ollama import ChatOllama, OllamaEmbeddings
+except ImportError:
+    print("警告: langchain-ollama 未安装，本地模型功能将不可用")
+    ChatOllama = None
+    OllamaEmbeddings = None
+
+# 尝试导入 OpenAI 相关模块
+try:
+    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+except ImportError:
+    print("警告: langchain-openai 未安装，远程模型功能将不可用")
+    ChatOpenAI = None
+    OpenAIEmbeddings = None
+
+# 尝试导入 HuggingFace 相关模块
+try:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+except ImportError:
+    print("警告: langchain-community 未安装，HuggingFace 模型功能将不可用")
+    HuggingFaceEmbeddings = None
+
 
 class ModelManager:
-    """模型管理器 - 负责初始化大模型并支持本地降级"""
-    
+    """模型管理器 - 负责初始化大模型并支持本地Ollama部署"""
+
     @staticmethod
     def get_llm(
-        use_local: bool = False,
+        use_local: bool = True,  # 默认使用本地模型
         model_name: Optional[str] = None,
         temperature: float = 0.7,
         streaming: bool = True,
@@ -18,76 +38,107 @@ class ModelManager:
     ):
         """
         获取大语言模型实例
-        
+
         Args:
-            use_local: 是否使用本地模型
+            use_local: 是否使用本地Ollama模型
             model_name: 模型名称
             temperature: 温度参数
             streaming: 是否流式输出
             timeout: 超时时间
-            
+
         Returns:
             语言模型实例
         """
-        
-        ##优先使用远程模型（OpenAI 兼容接口）
-        try:
-            api_key = os.getenv("OPENAI_API_KEY", os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY"))
-            base_url = os.getenv("OPENAI_BASE_URL", os.getenv("COZE_INTEGRATION_MODEL_BASE_URL"))
+        if use_local and ChatOllama:
+            # 使用本地Ollama模型
+            try:
+                ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+                ollama_model = model_name or os.getenv("OLLAMA_MODEL", "qwen2.5:14b")
 
-            # 检查远程模型配置是否完整
-            if not api_key:
-                raise Exception("远程模型 API 密钥未配置")
-            
-            remote_model_name = model_name or os.getenv("MODEL_NAME", "gpt-4o-mini")
-            
-            llm = ChatOpenAI(
-                model=remote_model_name,
-                api_key=api_key,
-                base_url=base_url,
-                temperature=temperature,
-                streaming=streaming,
-                timeout=timeout
-            )
-            
-            # 测试远程模型连接
-            llm.invoke("test")
-            return llm
-        except Exception as e:
-            print(f"远程模型初始化失败，回退到本地模型: {e}")
-            
-        # 远程模型失败时回退到本地模型
-        try:
-            local_model_name = model_name or "mistralai/Mistral-7B-v0.1"
-            llm = HuggingFaceHub(
-                repo_id=local_model_name,
-                model_kwargs={
-                    "temperature": temperature,
-                    "max_length": 1024
-                }
-            )
-            chat_model = ChatHuggingFace(llm=llm)
-            return chat_model
-        except Exception as e:
-            print(f"本地模型初始化失败: {e}")
-            raise Exception("所有模型初始化失败，请检查配置")
+                llm = ChatOllama(
+                    model=ollama_model,
+                    base_url=ollama_base_url,
+                    temperature=temperature,
+                    streaming=streaming
+                )
+
+                # 测试本地模型连接
+                llm.invoke("test")
+                print(f"本地Ollama模型初始化成功: {ollama_model}")
+                return llm
+            except Exception as e:
+                print(f"本地Ollama模型初始化失败: {e}")
+                if not ChatOpenAI:
+                    raise Exception("本地Ollama模型初始化失败，且远程模型依赖未安装")
+
+        # 尝试远程模型（如果可用）
+        if ChatOpenAI:
+            try:
+                api_key = os.getenv("OPENAI_API_KEY")
+                base_url = os.getenv("OPENAI_BASE_URL")
+
+                # 检查远程模型配置是否完整
+                if not api_key:
+                    raise Exception("远程模型 API 密钥未配置")
+
+                remote_model_name = model_name or os.getenv("MODEL_NAME", "gpt-4o-mini")
+
+                llm = ChatOpenAI(
+                    model=remote_model_name,
+                    api_key=api_key,
+                    base_url=base_url,
+                    temperature=temperature,
+                    streaming=streaming,
+                    timeout=timeout
+                )
+
+                # 测试远程模型连接
+                llm.invoke("test")
+                print(f"远程模型初始化成功: {remote_model_name}")
+                return llm
+            except Exception as e:
+                print(f"远程模型初始化失败: {e}")
+
+        # 回退到本地Ollama模型（如果可用）
+        if ChatOllama:
+            try:
+                ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+                ollama_model = model_name or os.getenv("OLLAMA_MODEL", "qwen2.5:14b")
+
+                llm = ChatOllama(
+                    model=ollama_model,
+                    base_url=ollama_base_url,
+                    temperature=temperature,
+                    streaming=streaming
+                )
+
+                # 测试本地模型连接
+                llm.invoke("test")
+                print(f"回退到本地Ollama模型初始化成功: {ollama_model}")
+                return llm
+            except Exception as e:
+                print(f"本地Ollama模型初始化失败: {e}")
+
+        raise Exception("所有模型初始化失败，请检查配置和依赖")
 
     @staticmethod
     def get_model_config() -> Dict[str, Any]:
         """
         获取模型配置
-        
+
         Returns:
             模型配置字典
         """
         return {
             "default_model": os.getenv("MODEL_NAME", "gpt-4o-mini"),
-            "api_key": os.getenv("OPENAI_API_KEY", os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY")),
-            "base_url": os.getenv("OPENAI_BASE_URL", os.getenv("COZE_INTEGRATION_MODEL_BASE_URL")),
+            "ollama_model": os.getenv("OLLAMA_MODEL", "qwen2.5:14b"),
+            "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "base_url": os.getenv("OPENAI_BASE_URL"),
             "temperature": float(os.getenv("MODEL_TEMPERATURE", "0.7")),
             "timeout": int(os.getenv("MODEL_TIMEOUT", "600"))
         }
-    
+
     @staticmethod
     def get_embedding(
         use_local: bool = True,
@@ -96,52 +147,71 @@ class ModelManager:
     ):
         """
         获取embedding模型实例
-        
+
         Args:
             use_local: 是否使用本地模型（默认True，以本地优先）
             model_name: 模型名称
             chunk_size: 分块大小
-            
+
         Returns:
             embedding模型实例
         """
-        # 优先使用本地模型
-        if use_local:
+        # 优先使用本地Ollama embedding模型
+        if use_local and OllamaEmbeddings:
             try:
-                local_model_name = model_name or "sentence-transformers/all-MiniLM-L6-v2"
+                ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+                ollama_embedding_model = model_name or os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text:latest")
+
+                embedding = OllamaEmbeddings(
+                    model=ollama_embedding_model,
+                    base_url=ollama_base_url
+                )
+
+                # 测试embedding
+                embedding.embed_query("test")
+                print(f"本地Ollama embedding模型初始化成功: {ollama_embedding_model}")
+                return embedding
+            except Exception as e:
+                print(f"本地Ollama embedding模型初始化失败，尝试其他模型: {e}")
+
+        # 尝试HuggingFace本地模型作为备选
+        if use_local and HuggingFaceEmbeddings:
+            try:
+                hf_model_name = model_name or "sentence-transformers/all-MiniLM-L6-v2"
                 embedding = HuggingFaceEmbeddings(
-                    model_name=local_model_name,
+                    model_name=hf_model_name,
                     model_kwargs={"device": "cpu"},
                     encode_kwargs={"normalize_embeddings": True}
                 )
                 # 测试embedding
                 embedding.embed_query("test")
-                print(f"本地embedding模型初始化成功: {local_model_name}")
+                print(f"本地HuggingFace embedding模型初始化成功: {hf_model_name}")
                 return embedding
             except Exception as e:
-                print(f"本地embedding模型初始化失败，回退到远程模型: {e}")
-                use_local = False
-        
-        # 回退到远程模型
-        try:
-            api_key = os.getenv("OPENAI_API_KEY", os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY"))
-            base_url = os.getenv("OPENAI_BASE_URL", os.getenv("COZE_INTEGRATION_MODEL_BASE_URL"))
-            
-            if not api_key:
-                raise Exception("远程embedding模型 API 密钥未配置")
-            
-            remote_model_name = model_name or "text-embedding-3-small"
-            embedding = OpenAIEmbeddings(
-                model=remote_model_name,
-                api_key=api_key,
-                base_url=base_url,
-                chunk_size=chunk_size
-            )
-            
-            # 测试embedding
-            embedding.embed_query("test")
-            print(f"远程embedding模型初始化成功: {remote_model_name}")
-            return embedding
-        except Exception as e:
-            print(f"远程embedding模型初始化失败: {e}")
-            raise Exception("所有embedding模型初始化失败，请检查配置")
+                print(f"本地HuggingFace embedding模型初始化失败，尝试远程模型: {e}")
+
+        # 尝试远程模型（如果可用）
+        if OpenAIEmbeddings:
+            try:
+                api_key = os.getenv("EMBEDDING_API_KEY") or os.getenv("OPENAI_API_KEY")
+                base_url = os.getenv("EMBEDDING_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+
+                if not api_key:
+                    raise Exception("远程embedding模型 API 密钥未配置")
+
+                remote_model_name = model_name or os.getenv("EMBEDDING_MODEL_NAME", "text-embedding-3-small")
+                embedding = OpenAIEmbeddings(
+                    model=remote_model_name,
+                    api_key=api_key,
+                    base_url=base_url,
+                    chunk_size=chunk_size
+                )
+
+                # 测试embedding
+                embedding.embed_query("test")
+                print(f"远程embedding模型初始化成功: {remote_model_name}")
+                return embedding
+            except Exception as e:
+                print(f"远程embedding模型初始化失败: {e}")
+
+        raise Exception("所有embedding模型初始化失败，请检查配置和依赖")

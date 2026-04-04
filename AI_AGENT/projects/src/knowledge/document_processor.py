@@ -14,7 +14,7 @@ from langchain_community.document_loaders import (
     Docx2txtLoader,
     UnstructuredFileLoader
 )
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 class DocumentProcessor:

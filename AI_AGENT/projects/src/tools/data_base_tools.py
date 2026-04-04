@@ -292,6 +292,149 @@ def get_question_bank(category: str = None, difficulty_min: float = 0, difficult
         session.close()
 
 
+def get_questions(topic: str = None, subject: str = None, limit: int = 100):
+    """
+    获取题目列表
+    
+    Args:
+        topic: 主题关键词（可选）
+        subject: 科目/分类（可选）
+        limit: 限制数量
+        
+    Returns:
+        List[Question]
+    """
+    session = get_session()
+    try:
+        query = session.query(Question)
+        
+        if topic:
+            # 使用模糊查询
+            query = query.filter(Question.category.like(f"%{topic}%"))
+        
+        if subject:
+            query = query.filter(Question.category == subject)
+        
+        questions = query.limit(limit).all()
+        return questions
+    finally:
+        session.close()
+
+
+def create_question(question_text: str, question_type: str = None, difficulty: float = 0.5, 
+                   subject: str = None, knowledge_points: str = None, options: str = None,
+                   correct_answer: str = None, answer_analysis: str = None, created_at: datetime = None):
+    """
+    创建题目
+    
+    Args:
+        question_text: 题目内容
+        question_type: 题目类型
+        difficulty: 难度系数（0.0-1.0）
+        subject: 科目/分类
+        knowledge_points: 知识点（JSON 字符串）
+        options: 选项（JSON 字符串）
+        correct_answer: 正确答案
+        answer_analysis: 答案解析
+        created_at: 创建时间
+        
+    Returns:
+        Question 对象或 None
+    """
+    session = get_session()
+    try:
+        question = Question(
+            question_text=question_text,
+            category=subject or "general",
+            difficulty=difficulty,
+            answer=correct_answer or "",
+            explanation=answer_analysis,
+            tags=knowledge_points
+        )
+        session.add(question)
+        session.commit()
+        session.refresh(question)
+        return question
+    except Exception as e:
+        session.rollback()
+        print(f"创建题目失败：{e}")
+        return None
+    finally:
+        session.close()
+
+
+def create_answer_record(exam_record_id: int, question_id: int, student_answer: str, 
+                        is_correct: bool, score: float):
+    """
+    创建答题记录
+    
+    Args:
+        exam_record_id: 考试记录 ID
+        question_id: 题目 ID
+        student_answer: 学生答案
+        is_correct: 是否正确
+        score: 得分
+        
+    Returns:
+        AnswerRecord 对象或 None
+    """
+    session = get_session()
+    try:
+        answer_record = AnswerRecord(
+            exam_record_id=exam_record_id,
+            question_id=question_id,
+            student_answer=student_answer,
+            is_correct=is_correct,
+            score=score
+        )
+        session.add(answer_record)
+        session.commit()
+        session.refresh(answer_record)
+        return answer_record
+    except Exception as e:
+        session.rollback()
+        print(f"创建答题记录失败：{e}")
+        return None
+    finally:
+        session.close()
+
+
+def create_exam_record(student_id: int, exam_name: str, total_score: float, 
+                      max_score: float, exam_date: datetime = None):
+    """
+    创建考试记录
+    
+    Args:
+        student_id: 学生 ID
+        exam_name: 考试名称
+        total_score: 学生得分
+        max_score: 满分
+        exam_date: 考试日期
+        
+    Returns:
+        ExamRecord 对象或 None
+    """
+    session = get_session()
+    try:
+        exam_record = ExamRecord(
+            student_id=student_id,
+            exam_name=exam_name,
+            total_score=total_score,
+            max_score=max_score,
+            exam_date=exam_date or datetime.now()
+        )
+        session.add(exam_record)
+        session.commit()
+        session.refresh(exam_record)
+        return exam_record
+    except Exception as e:
+        session.rollback()
+        print(f"创建考试记录失败：{e}")
+        return None
+    finally:
+        session.close()
+
+
 def add_question(question_text: str, category: str, difficulty: float, answer: str, explanation: str = None, tags: str = None):
     """
     添加题目到题库

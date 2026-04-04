@@ -9,10 +9,30 @@
 import os
 import json
 from typing import Annotated, Optional
-from langchain.agents import create_agent
-from langgraph.graph import MessagesState
-from langgraph.graph.message import add_messages
-from langchain_core.messages import AnyMessage
+
+# 尝试导入 langchain 相关模块
+try:
+    from langchain.agents import create_agent
+except ImportError:
+    print("警告: langchain 未安装")
+    create_agent = None
+
+# 尝试导入 langgraph 相关模块
+try:
+    from langgraph.graph import MessagesState
+    from langgraph.graph.message import add_messages
+except ImportError:
+    print("警告: langgraph 未安装")
+    MessagesState = None
+    add_messages = None
+
+# 尝试导入 langchain_core 相关模块
+try:
+    from langchain_core.messages import AnyMessage
+except ImportError:
+    print("警告: langchain-core 未安装")
+    AnyMessage = None
+
 from storage.memory.memory_saver import get_memory_saver
 from models.model_manager import ModelManager
 
@@ -82,10 +102,17 @@ def build_agent(use_local: bool = False, ctx=None):
     )
     
     # 导入各个模块的Agent构建函数
-    from .exam_analysis_agent import build_exam_analysis_agent
-    from .learning_profile_agent import build_learning_profile_agent
-    from .learning_assessment_agent import build_learning_assessment_agent
-    from .teaching_assistant_agent import build_teaching_assistant_agent
+    try:
+        from .exam_analysis_agent import build_exam_analysis_agent
+        from .learning_profile_agent import build_learning_profile_agent
+        from .learning_assessment_agent import build_learning_assessment_agent
+        from .teaching_assistant_agent import build_teaching_assistant_agent
+    except ImportError as e:
+        print(f"警告: 无法导入智能体模块: {e}")
+        build_exam_analysis_agent = None
+        build_learning_profile_agent = None
+        build_learning_assessment_agent = None
+        build_teaching_assistant_agent = None
     
     # 定义所有可用工具
     tools = [
@@ -188,13 +215,18 @@ def build_agent(use_local: bool = False, ctx=None):
     if cfg.get("sp"):
         system_prompt = cfg.get("sp") + "\n\n" + system_prompt
     
-    return create_agent(
-        model=llm,
-        system_prompt=system_prompt,
-        tools=tools,
-        checkpointer=get_memory_saver(),
-        state_schema=AgentState,
-    )
+    if create_agent:
+        checkpointer = get_memory_saver()
+        return create_agent(
+            model=llm,
+            system_prompt=system_prompt,
+            tools=tools,
+            checkpointer=checkpointer,
+            state_schema=AgentState,
+        )
+    else:
+        print("警告: create_agent 不可用，无法构建智能体")
+        raise Exception("create_agent 不可用，无法构建智能体")
 
 def get_agent_by_request(request: str, use_local: bool = False):
     """
@@ -208,26 +240,49 @@ def get_agent_by_request(request: str, use_local: bool = False):
         对应的Agent实例
     """
     # 导入各个模块的Agent构建函数
-    from .exam_analysis_agent import build_exam_analysis_agent
-    from .learning_profile_agent import build_learning_profile_agent
-    from .learning_assessment_agent import build_learning_assessment_agent
-    from .teaching_assistant_agent import build_teaching_assistant_agent
+    try:
+        from .exam_analysis_agent import build_exam_analysis_agent
+        from .learning_profile_agent import build_learning_profile_agent
+        from .learning_assessment_agent import build_learning_assessment_agent
+        from .teaching_assistant_agent import build_teaching_assistant_agent
+    except ImportError as e:
+        print(f"警告: 无法导入智能体模块: {e}")
+        build_exam_analysis_agent = None
+        build_learning_profile_agent = None
+        build_learning_assessment_agent = None
+        build_teaching_assistant_agent = None
     
     # 关键词匹配
     request_lower = request.lower()
     
     # 考试分析模块关键词
     if any(keyword in request_lower for keyword in ["分析", "试卷", "薄弱点", "错题", "考试"]):
-        return build_exam_analysis_agent(use_local=use_local)
+        if build_exam_analysis_agent:
+            return build_exam_analysis_agent(use_local=use_local)
+        else:
+            print("警告: 考试分析智能体不可用，使用办学助手代替")
+            return build_teaching_assistant_agent(use_local=use_local) if build_teaching_assistant_agent else None
     
     # 学情分析模块关键词
     elif any(keyword in request_lower for keyword in ["档案", "学情", "记录", "进度", "学习档案"]):
-        return build_learning_profile_agent(use_local=use_local)
+        if build_learning_profile_agent:
+            return build_learning_profile_agent(use_local=use_local)
+        else:
+            print("警告: 学情分析智能体不可用，使用办学助手代替")
+            return build_teaching_assistant_agent(use_local=use_local) if build_teaching_assistant_agent else None
     
     # 学情检测模块关键词
     elif any(keyword in request_lower for keyword in ["试卷", "测试", "组卷", "强化", "题库"]):
-        return build_learning_assessment_agent(use_local=use_local)
+        if build_learning_assessment_agent:
+            return build_learning_assessment_agent(use_local=use_local)
+        else:
+            print("警告: 学情检测智能体不可用，使用办学助手代替")
+            return build_teaching_assistant_agent(use_local=use_local) if build_teaching_assistant_agent else None
     
     # 办学助手模块（默认）
     else:
-        return build_teaching_assistant_agent(use_local=use_local)
+        if build_teaching_assistant_agent:
+            return build_teaching_assistant_agent(use_local=use_local)
+        else:
+            print("警告: 所有智能体均不可用")
+            raise Exception("所有智能体均不可用")

@@ -5,9 +5,16 @@
 """
 
 from typing import List, Optional, Dict, Any
-from langchain_core.documents import Document
-from knowledge.vector_store import VectorStore
-from knowledge.document_processor import DocumentProcessor
+
+# 尝试导入 langchain 相关模块
+try:
+    from langchain_core.documents import Document
+except ImportError:
+    print("警告: langchain-core 未安装")
+    Document = None
+
+from .vector_store import VectorStore
+from .document_processor import DocumentProcessor
 
 
 class KnowledgeBase:
@@ -132,10 +139,14 @@ class KnowledgeBase:
             是否添加成功
         """
         try:
-            document = Document(page_content=text, metadata=metadata or {})
-            self.vector_store.add_documents([document])
-            print("文档添加成功")
-            return True
+            if Document:
+                document = Document(page_content=text, metadata=metadata or {})
+                self.vector_store.add_documents([document])
+                print("文档添加成功")
+                return True
+            else:
+                print("警告: Document 类不可用，无法添加文档")
+                return False
         except Exception as e:
             print(f"文档添加失败: {e}")
             return False

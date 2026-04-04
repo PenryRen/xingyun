@@ -30,7 +30,7 @@ class ModelManager:
 
     @staticmethod
     def get_llm(
-        use_local: bool = True,  # 默认使用本地模型
+        use_local: bool = False,
         model_name: Optional[str] = None,
         temperature: float = 0.7,
         streaming: bool = True,
@@ -49,29 +49,34 @@ class ModelManager:
         Returns:
             语言模型实例
         """
-        if use_local and ChatOllama:
+        # 检查是否有可用的模型
+        if not ChatOllama and not ChatOpenAI:
+            raise Exception("没有可用的模型，请安装 langchain-ollama 或 langchain-openai")
+
+        if use_local:
             # 使用本地Ollama模型
-            try:
-                ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-                ollama_model = model_name or os.getenv("OLLAMA_MODEL", "qwen2.5:14b")
+            if ChatOllama:
+                try:
+                    ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+                    ollama_model = model_name or os.getenv("OLLAMA_MODEL", "qwen2.5:14b")
 
-                llm = ChatOllama(
-                    model=ollama_model,
-                    base_url=ollama_base_url,
-                    temperature=temperature,
-                    streaming=streaming
-                )
+                    llm = ChatOllama(
+                        model=ollama_model,
+                        base_url=ollama_base_url,
+                        temperature=temperature,
+                        streaming=streaming
+                    )
 
-                # 测试本地模型连接
-                llm.invoke("test")
-                print(f"本地Ollama模型初始化成功: {ollama_model}")
-                return llm
-            except Exception as e:
-                print(f"本地Ollama模型初始化失败: {e}")
-                if not ChatOpenAI:
-                    raise Exception("本地Ollama模型初始化失败，且远程模型依赖未安装")
+                    # 测试本地模型连接
+                    llm.invoke("test")
+                    print(f"本地Ollama模型初始化成功: {ollama_model}")
+                    return llm
+                except Exception as e:
+                    print(f"本地Ollama模型初始化失败: {e}")
+            else:
+                print("警告: ChatOllama 不可用，无法使用本地模型")
 
-        # 尝试远程模型（如果可用）
+        # 优先使用远程模型（OpenAI 兼容接口）
         if ChatOpenAI:
             try:
                 api_key = os.getenv("OPENAI_API_KEY")
@@ -98,8 +103,10 @@ class ModelManager:
                 return llm
             except Exception as e:
                 print(f"远程模型初始化失败: {e}")
+        else:
+            print("警告: ChatOpenAI 不可用，无法使用远程模型")
 
-        # 回退到本地Ollama模型（如果可用）
+        # 远程模型失败时回退到本地Ollama模型
         if ChatOllama:
             try:
                 ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -119,7 +126,8 @@ class ModelManager:
             except Exception as e:
                 print(f"本地Ollama模型初始化失败: {e}")
 
-        raise Exception("所有模型初始化失败，请检查配置和依赖")
+        # 所有模型都失败
+        raise Exception("所有模型初始化失败，请检查配置")
 
     @staticmethod
     def get_model_config() -> Dict[str, Any]:
@@ -156,11 +164,17 @@ class ModelManager:
         Returns:
             embedding模型实例
         """
-        # 优先使用本地Ollama embedding模型
-        if use_local and OllamaEmbeddings:
+        # 尝试本地Ollama embedding模型（无论use_local值如何，都作为备选）
+        def try_local_ollama():
             try:
+                # 检查Ollama模块是否可用
+                if not OllamaEmbeddings:
+                    raise Exception("OllamaEmbeddings 模块未导入")
+                
                 ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-                ollama_embedding_model = model_name or os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text:latest")
+                ollama_embedding_model = model_name or os.getenv("OLLAMA_EMBEDDING_MODEL", "qwen3-embedding:8b")
+                
+                print(f"尝试初始化本地Ollama embedding模型: {ollama_embedding_model}，URL: {ollama_base_url}")
 
                 embedding = OllamaEmbeddings(
                     model=ollama_embedding_model,
@@ -168,15 +182,22 @@ class ModelManager:
                 )
 
                 # 测试embedding
-                embedding.embed_query("test")
+                print("测试Ollama embedding模型...")
+                result = embedding.embed_query("test")
+                print(f"Ollama embedding测试成功，向量长度: {len(result)}")
                 print(f"本地Ollama embedding模型初始化成功: {ollama_embedding_model}")
                 return embedding
             except Exception as e:
-                print(f"本地Ollama embedding模型初始化失败，尝试其他模型: {e}")
+                print(f"本地Ollama embedding模型初始化失败: {e}")
+                import traceback
+                traceback.print_exc()
+                return None
 
-        # 尝试HuggingFace本地模型作为备选
-        if use_local and HuggingFaceEmbeddings:
+        # 尝试HuggingFace本地模型
+        def try_huggingface():
             try:
+                if not HuggingFaceEmbeddings:
+                    raise Exception("HuggingFaceEmbeddings 模块未导入")
                 hf_model_name = model_name or "sentence-transformers/all-MiniLM-L6-v2"
                 embedding = HuggingFaceEmbeddings(
                     model_name=hf_model_name,
@@ -188,30 +209,80 @@ class ModelManager:
                 print(f"本地HuggingFace embedding模型初始化成功: {hf_model_name}")
                 return embedding
             except Exception as e:
-                print(f"本地HuggingFace embedding模型初始化失败，尝试远程模型: {e}")
+                print(f"本地HuggingFace embedding模型初始化失败: {e}")
+                return None
 
-        # 尝试远程模型（如果可用）
-        if OpenAIEmbeddings:
+        # 尝试远程模型
+        def try_remote():
             try:
+                if not OpenAIEmbeddings:
+                    raise Exception("OpenAIEmbeddings 模块未导入")
                 api_key = os.getenv("EMBEDDING_API_KEY") or os.getenv("OPENAI_API_KEY")
                 base_url = os.getenv("EMBEDDING_BASE_URL") or os.getenv("OPENAI_BASE_URL")
 
                 if not api_key:
                     raise Exception("远程embedding模型 API 密钥未配置")
 
-                remote_model_name = model_name or os.getenv("EMBEDDING_MODEL_NAME", "text-embedding-3-small")
-                embedding = OpenAIEmbeddings(
-                    model=remote_model_name,
-                    api_key=api_key,
-                    base_url=base_url,
-                    chunk_size=chunk_size
-                )
+                # 尝试不同的embedding模型
+                embedding_models = [
+                    model_name or os.getenv("EMBEDDING_MODEL_NAME"),
+                    "text-embedding-3-small",
+                    "text-embedding-ada-002"
+                ]
+                
+                for remote_model_name in embedding_models:
+                    if not remote_model_name:
+                        continue
+                    try:
+                        embedding = OpenAIEmbeddings(
+                            model=remote_model_name,
+                            api_key=api_key,
+                            base_url=base_url,
+                            chunk_size=chunk_size
+                        )
 
-                # 测试embedding
-                embedding.embed_query("test")
-                print(f"远程embedding模型初始化成功: {remote_model_name}")
-                return embedding
+                        # 测试embedding
+                        embedding.embed_query("test")
+                        print(f"远程embedding模型初始化成功: {remote_model_name}")
+                        return embedding
+                    except Exception as e:
+                        print(f"远程embedding模型 {remote_model_name} 初始化失败: {e}")
+                        continue
+                return None
             except Exception as e:
                 print(f"远程embedding模型初始化失败: {e}")
+                return None
 
-        raise Exception("所有embedding模型初始化失败，请检查配置和依赖")
+        # 执行模型初始化逻辑
+        if use_local:
+            # 优先本地模型
+            embedding = try_local_ollama()
+            if embedding:
+                return embedding
+            
+            embedding = try_huggingface()
+            if embedding:
+                return embedding
+            
+            # 本地模型失败，尝试远程模型
+            embedding = try_remote()
+            if embedding:
+                return embedding
+        else:
+            # 优先远程模型
+            embedding = try_remote()
+            if embedding:
+                return embedding
+            
+            # 远程模型失败，尝试本地模型作为备选
+            print("远程模型失败，尝试本地Ollama模型...")
+            embedding = try_local_ollama()
+            if embedding:
+                return embedding
+            
+            embedding = try_huggingface()
+            if embedding:
+                return embedding
+
+        # 所有模型都失败
+        raise Exception("所有embedding模型初始化失败，请检查配置")

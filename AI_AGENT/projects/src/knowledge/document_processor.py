@@ -7,14 +7,33 @@
 import os
 import re
 from typing import List, Dict, Any
-from langchain_core.documents import Document
-from langchain_community.document_loaders import (
-    TextLoader,
-    PyPDFLoader,
-    Docx2txtLoader,
-    UnstructuredFileLoader
-)
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# 尝试导入 langchain 相关模块
+try:
+    from langchain_core.documents import Document
+except ImportError:
+    print("警告: langchain-core 未安装")
+    Document = None
+
+try:
+    from langchain_community.document_loaders import (
+        TextLoader,
+        PyPDFLoader,
+        Docx2txtLoader,
+        UnstructuredFileLoader
+    )
+except ImportError:
+    print("警告: langchain-community 未安装")
+    TextLoader = None
+    PyPDFLoader = None
+    Docx2txtLoader = None
+    UnstructuredFileLoader = None
+
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    print("警告: langchain-text-splitters 未安装")
+    RecursiveCharacterTextSplitter = None
 
 
 class DocumentProcessor:
@@ -41,11 +60,17 @@ class DocumentProcessor:
         self.word_dir = word_dir
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            separators=["\n\n", "\n", " ", ""]
-        )
+        
+        # 初始化文本分割器
+        if RecursiveCharacterTextSplitter:
+            self.text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                separators=["\n\n", "\n", " ", ""]
+            )
+        else:
+            print("警告: 文本分割器不可用")
+            self.text_splitter = None
     
     def load_file(self, file_path: str) -> List[Document]:
         """
@@ -112,11 +137,15 @@ class DocumentProcessor:
         if not documents:
             return []
         
-        split_docs = self.text_splitter.split_documents(documents)
-        print(f"成功将 {len(documents)} 个文档分块为 {len(split_docs)} 个块")
-        return split_docs
+        if self.text_splitter:
+            split_docs = self.text_splitter.split_documents(documents)
+            print(f"成功将 {len(documents)} 个文档分块为 {len(split_docs)} 个块")
+            return split_docs
+        else:
+            print("警告: 文本分割器不可用，返回原始文档")
+            return documents
     
-    def process_documents(self) -> List[Document]:
+    def process_documents(self) -> List:
         """
         处理所有文档
         
@@ -125,6 +154,10 @@ class DocumentProcessor:
         Returns:
             处理后的文档列表
         """
+        if not Document:
+            print("警告: Document 类不可用，无法处理文档")
+            return []
+        
         # 加载所有文件
         documents = self.load_all_files()
         
@@ -134,13 +167,17 @@ class DocumentProcessor:
         # 清理文档内容
         cleaned_docs = []
         for doc in split_docs:
-            cleaned_content = self._clean_text(doc.page_content)
-            if cleaned_content.strip():
-                cleaned_doc = Document(
-                    page_content=cleaned_content,
-                    metadata=doc.metadata
-                )
-                cleaned_docs.append(cleaned_doc)
+            try:
+                cleaned_content = self._clean_text(doc.page_content)
+                if cleaned_content.strip():
+                    cleaned_doc = Document(
+                        page_content=cleaned_content,
+                        metadata=doc.metadata
+                    )
+                    cleaned_docs.append(cleaned_doc)
+            except Exception as e:
+                print(f"处理文档失败: {e}")
+                continue
         
         print(f"成功处理 {len(cleaned_docs)} 个文档块")
         return cleaned_docs

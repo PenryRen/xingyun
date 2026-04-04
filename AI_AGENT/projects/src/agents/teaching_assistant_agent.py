@@ -1,14 +1,40 @@
 """
 办学助手模块 - 负责解答学生问题
 """
-from langchain.agents import create_agent
-from langgraph.graph import MessagesState
-from langchain_core.messages import AnyMessage
 from typing import Annotated
 from storage.memory.memory_saver import get_memory_saver
 from models.model_manager import ModelManager
-from knowledge import KnowledgeBase
 from langchain_core.tools import Tool
+
+# 尝试导入 langchain 相关模块
+try:
+    from langchain.agents import create_agent
+except ImportError:
+    print("警告: langchain 未安装")
+    create_agent = None
+
+# 尝试导入 langgraph 相关模块
+try:
+    from langgraph.graph import MessagesState
+    from langgraph.graph.message import add_messages
+except ImportError:
+    print("警告: langgraph 未安装")
+    MessagesState = None
+    add_messages = None
+
+# 尝试导入 langchain_core 相关模块
+try:
+    from langchain_core.messages import AnyMessage
+except ImportError:
+    print("警告: langchain-core 未安装")
+    AnyMessage = None
+
+# 尝试导入知识库模块
+try:
+    from knowledge import KnowledgeBase
+except ImportError:
+    print("警告: 知识库模块不可用")
+    KnowledgeBase = None
 
 # 默认保留最近 20 轮对话 (40 条消息)
 MAX_MESSAGES = 40
@@ -36,7 +62,13 @@ def build_teaching_assistant_agent(use_local: bool = False):
     )
     
     # 初始化知识库
-    knowledge_base = KnowledgeBase(use_local=use_local)
+    knowledge_base = None
+    if KnowledgeBase:
+        try:
+            knowledge_base = KnowledgeBase(use_local=use_local)
+        except Exception as e:
+            print(f"初始化知识库失败: {e}")
+            knowledge_base = None
     
     # 定义工具
     def query_knowledge_base(query: str, k: int = 3) -> str:
@@ -50,11 +82,17 @@ def build_teaching_assistant_agent(use_local: bool = False):
         Returns:
             相关文档内容
         """
-        context = knowledge_base.get_relevant_context(query, k=k)
-        if context:
-            return f"知识库查询结果:\n{context}"
+        if knowledge_base:
+            try:
+                context = knowledge_base.get_relevant_context(query, k=k)
+                if context:
+                    return f"知识库查询结果:\n{context}"
+                else:
+                    return "知识库中未找到相关信息"
+            except Exception as e:
+                return f"查询知识库失败: {e}"
         else:
-            return "知识库中未找到相关信息"
+            return "知识库不可用"
     
     # 创建工具
     tools = [

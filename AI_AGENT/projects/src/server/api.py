@@ -21,15 +21,31 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from langchain_core.messages import HumanMessage, AIMessage
+
+# 尝试导入 langchain 相关模块
+try:
+    from langchain_core.messages import HumanMessage, AIMessage
+except ImportError:
+    print("警告: langchain-core 未安装")
+    HumanMessage = None
+    AIMessage = None
 
 # 导入智能体模块
-from agents.exam_analysis_agent import build_exam_analysis_agent
-from agents.learning_profile_agent import build_learning_profile_agent
-from agents.learning_assessment_agent import build_learning_assessment_agent
-from agents.teaching_assistant_agent import build_teaching_assistant_agent
-from agents.agent import get_agent_by_request
-from graphs import create_learning_workflow
+try:
+    from agents.exam_analysis_agent import build_exam_analysis_agent
+    from agents.learning_profile_agent import build_learning_profile_agent
+    from agents.learning_assessment_agent import build_learning_assessment_agent
+    from agents.teaching_assistant_agent import build_teaching_assistant_agent
+    from agents.agent import get_agent_by_request
+    from graphs import create_learning_workflow
+except ImportError as e:
+    print(f"警告: 无法导入智能体模块: {e}")
+    build_exam_analysis_agent = None
+    build_learning_profile_agent = None
+    build_learning_assessment_agent = None
+    build_teaching_assistant_agent = None
+    get_agent_by_request = None
+    create_learning_workflow = None
 
 # 导入数据模型
 from server.models import (
@@ -63,16 +79,27 @@ def _get_agent(agent_type: AgentType, use_local: bool = False):
     if cache_key not in _agent_cache:
         logger.info(f"创建Agent实例: {agent_type.value}, use_local={use_local}")
         
-        if agent_type == AgentType.EXAM_ANALYSIS:
-            _agent_cache[cache_key] = build_exam_analysis_agent(use_local=use_local)
-        elif agent_type == AgentType.LEARNING_PROFILE:
-            _agent_cache[cache_key] = build_learning_profile_agent(use_local=use_local)
-        elif agent_type == AgentType.LEARNING_ASSESSMENT:
-            _agent_cache[cache_key] = build_learning_assessment_agent(use_local=use_local)
-        elif agent_type == AgentType.TEACHING_ASSISTANT:
-            _agent_cache[cache_key] = build_teaching_assistant_agent(use_local=use_local)
-        else:
-            raise ValueError(f"未知的Agent类型: {agent_type}")
+        try:
+            if agent_type == AgentType.EXAM_ANALYSIS:
+                _agent_cache[cache_key] = build_exam_analysis_agent(use_local=use_local)
+            elif agent_type == AgentType.LEARNING_PROFILE:
+                _agent_cache[cache_key] = build_learning_profile_agent(use_local=use_local)
+            elif agent_type == AgentType.LEARNING_ASSESSMENT:
+                _agent_cache[cache_key] = build_learning_assessment_agent(use_local=use_local)
+            elif agent_type == AgentType.TEACHING_ASSISTANT:
+                _agent_cache[cache_key] = build_teaching_assistant_agent(use_local=use_local)
+            else:
+                raise ValueError(f"未知的Agent类型: {agent_type}")
+        except Exception as e:
+            logger.error(f"创建Agent实例失败: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=ErrorResponse(
+                    error_code="AGENT_CREATION_ERROR",
+                    error_message=f"创建智能体失败: {str(e)}",
+                    timestamp=_get_timestamp()
+                ).dict()
+            )
     
     return _agent_cache[cache_key]
 
@@ -83,7 +110,17 @@ def _get_workflow(use_local: bool = False):
     
     if cache_key not in _workflow_cache:
         logger.info(f"创建工作流实例: use_local={use_local}")
-        _workflow_cache[cache_key] = create_learning_workflow(use_local=use_local)
+        workflow = create_learning_workflow(use_local=use_local)
+        if not workflow:
+            raise HTTPException(
+                status_code=500,
+                detail=ErrorResponse(
+                    error_code="WORKFLOW_CREATION_ERROR",
+                    error_message="创建工作流失败，请检查依赖是否安装",
+                    timestamp=_get_timestamp()
+                ).dict()
+            )
+        _workflow_cache[cache_key] = workflow
     
     return _workflow_cache[cache_key]
 
@@ -134,6 +171,16 @@ async def global_exception_handler(request: Request, exc: Exception):
             timestamp=_get_timestamp()
         ).dict()
     )
+
+# 检查必要的模块是否可用
+try:
+    from langchain.agents import create_agent
+    from langchain_core.messages import HumanMessage, AIMessage
+except ImportError:
+    print("警告: langchain 或 langchain-core 未安装，智能体功能将不可用")
+    create_agent = None
+    HumanMessage = None
+    AIMessage = None
 
 
 @app.get("/", response_model=HealthResponse)
@@ -237,9 +284,11 @@ async def chat(request: ChatRequest):
             actual_agent_type = request.agent_type
         
         # 调用Agent
-        result = agent.invoke({
-            "messages": [HumanMessage(content=request.message)]
-        })
+        config = {"configurable": {"thread_id": request.session_id or "default"}}
+        result = agent.invoke(
+            {"messages": [HumanMessage(content=request.message)]},
+            config=config
+        )
         
         # 提取响应消息
         messages = result.get("messages", [])
@@ -307,10 +356,12 @@ async def chat_stream(request: ChatRequest):
             yield f"data: {json.dumps(start_chunk.dict(), ensure_ascii=False)}\n\n"
             
             # 调用Agent的流式接口
+            config = {"configurable": {"thread_id": request.session_id or "default"}}
             full_response = ""
-            for chunk in agent.stream({
-                "messages": [HumanMessage(content=request.message)]
-            }):
+            for chunk in agent.stream(
+                {"messages": [HumanMessage(content=request.message)]},
+                config=config
+            ):
                 if isinstance(chunk, dict) and "messages" in chunk:
                     messages = chunk["messages"]
                     if messages:

@@ -14,16 +14,31 @@
 """
 
 from typing import Annotated, TypedDict, Literal, Optional
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langgraph.graph import StateGraph, END
-from langgraph.graph.message import add_messages
-from langgraph.checkpoint.memory import MemorySaver
-
 from models.model_manager import ModelManager
-from agents.exam_analysis_agent import build_exam_analysis_agent
-from agents.learning_profile_agent import build_learning_profile_agent
-from agents.learning_assessment_agent import build_learning_assessment_agent
-from agents.teaching_assistant_agent import build_teaching_assistant_agent
+
+# 尝试导入 langchain 相关模块
+try:
+    from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+    from langgraph.graph import StateGraph, END
+    from langgraph.graph.message import add_messages
+    from langgraph.checkpoint.memory import MemorySaver
+    from agents.exam_analysis_agent import build_exam_analysis_agent
+    from agents.learning_profile_agent import build_learning_profile_agent
+    from agents.learning_assessment_agent import build_learning_assessment_agent
+    from agents.teaching_assistant_agent import build_teaching_assistant_agent
+except ImportError as e:
+    print(f"警告: 无法导入工作流相关模块: {e}")
+    HumanMessage = None
+    AIMessage = None
+    SystemMessage = None
+    StateGraph = None
+    END = None
+    add_messages = None
+    MemorySaver = None
+    build_exam_analysis_agent = None
+    build_learning_profile_agent = None
+    build_learning_assessment_agent = None
+    build_teaching_assistant_agent = None
 
 
 class LearningWorkflowState(TypedDict):
@@ -84,11 +99,11 @@ class LearningSupervisorWorkflow:
             }
         )
         
-        # 添加边：从子Agent返回主管
-        workflow.add_edge("exam_analysis", "supervisor")
-        workflow.add_edge("learning_profile", "supervisor")
-        workflow.add_edge("learning_assessment", "supervisor")
-        workflow.add_edge("teaching_assistant", "supervisor")
+        # 添加边：从子Agent到结束
+        workflow.add_edge("exam_analysis", END)
+        workflow.add_edge("learning_profile", END)
+        workflow.add_edge("learning_assessment", END)
+        workflow.add_edge("teaching_assistant", END)
         
         return workflow
     
@@ -330,7 +345,7 @@ class LearningSupervisorWorkflow:
 
 
 # 便捷函数
-def create_learning_workflow(use_local: bool = False) -> LearningSupervisorWorkflow:
+def create_learning_workflow(use_local: bool = False):
     """
     创建学习辅助工作流
     
@@ -338,9 +353,15 @@ def create_learning_workflow(use_local: bool = False) -> LearningSupervisorWorkf
         use_local: 是否使用本地模型
         
     Returns:
-        学习辅助工作流实例
+        学习辅助工作流实例或None
     """
-    return LearningSupervisorWorkflow(use_local=use_local)
+    try:
+        if not all([StateGraph, MemorySaver, build_exam_analysis_agent, build_learning_profile_agent, build_learning_assessment_agent, build_teaching_assistant_agent]):
+            raise ImportError("工作流相关模块未完全导入")
+        return LearningSupervisorWorkflow(use_local=use_local)
+    except Exception as e:
+        print(f"创建工作流失败: {e}")
+        return None
 
 
 def run_learning_workflow(user_input: str, use_local: bool = False, thread_id: str = "default") -> str:

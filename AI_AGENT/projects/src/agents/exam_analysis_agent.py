@@ -1,12 +1,25 @@
 """
 考试分析模块 - 负责分析试卷和识别薄弱点
 """
-from langchain.agents import create_agent
-from langgraph.graph import MessagesState
-from langchain_core.messages import AnyMessage
 from typing import Annotated
 from storage.memory.memory_saver import get_memory_saver
 from models.model_manager import ModelManager
+
+# 尝试导入 langchain 相关模块
+try:
+    from langchain.agents import create_agent
+except ImportError:
+    print("警告: langchain 未安装")
+    create_agent = None
+
+# 尝试导入 langgraph 相关模块
+try:
+    from langgraph.graph import MessagesState
+    from langchain_core.messages import AnyMessage
+except ImportError:
+    print("警告: langgraph 或 langchain-core 未安装")
+    MessagesState = None
+    AnyMessage = None
 
 # 导入工具
 from tools.exam_analysis_tool import analyze_exam_paper, get_student_weak_points

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智能体测试平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        .chat-container {
+            height: 600px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            max-width: 80%;
+            margin-bottom: 12px;
+            padding: 10px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+        }
+        
+        .user-message {
+            background-color: #e6f7ff;
+            border-bottom-right-radius: 4px;
+            align-self: flex-end;
+        }
+        
+        .ai-message {
+            background-color: #f0f0f0;
+            border-bottom-left-radius: 4px;
+            align-self: flex-start;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #888;
+            border-radius: 50%;
+            display: inline-block;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        
+        .typing-indicator span:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0);
+            } 40% {
+                transform: scale(1);
+            }
+        }
+        
+        .agent-card {
+            transition: all 0.3s ease;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .agent-card.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">AI 智能体测试平台</h1>
+            <p class="text-gray-600">测试和展示麒麟系统教育平台的智能体功能</p>
+        </div>
+        
+        <!-- 智能体选择 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="agent-card border border-gray-200 rounded-lg p-4 cursor-pointer active" data-agent="workflow">
+                <div class="flex items-center mb-2">
+                    <i class="fa fa-sitemap text-2xl text-blue-500 mr-3"></i>
+                    <h3 class="font-semibold">主管工作流</h3>
+                </div>
+                <p class="text-sm text-gray-600">智能路由，自动选择合适的智能体</p>
+            </div>
+            
+            <div class="agent-card border border-gray-200 rounded-lg p-4 cursor-pointer" data-agent="exam_analysis">
+                <div class="flex items-center mb-2">
+                    <i class="fa fa-line-chart text-2xl text-green-500 mr-3"></i>
+                    <h3 class="font-semibold">考试分析</h3>
+                </div>
+                <p class="text-sm text-gray-600">分析试卷，识别薄弱知识点</p>
+            </div>
+            
+            <div class="agent-card border border-gray-200 rounded-lg p-4 cursor-pointer" data-agent="learning_profile">
+                <div class="flex items-center mb-2">
+                    <i class="fa fa-user text-2xl text-purple-500 mr-3"></i>
+                    <h3 class="font-semibold">学情分析</h3>
+                </div>
+                <p class="text-sm text-gray-600">维护学情档案，跟踪学习进度</p>
+            </div>
+            
+            <div class="agent-card border border-gray-200 rounded-lg p-4 cursor-pointer" data-agent="teaching_assistant">
+                <div class="flex items-center mb-2">
+                    <i class="fa fa-lightbulb-o text-2xl text-yellow-500 mr-3"></i>
+                    <h3 class="font-semibold">办学助手</h3>
+                </div>
+                <p class="text-sm text-gray-600">解答问题，提供学习指导</p>
+            </div>
+        </div>
+        
+        <!-- 聊天界面 -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+            <div class="chat-container flex flex-col mb-4 p-2" id="chat-container">
+                <div class="message ai-message">
+                    <p>你好！我是麒麟系统教育平台的智能助手。请选择一个智能体并输入你的问题。</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <input type="text" id="user-input" class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入你的问题...">
+                <button id="send-btn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fa fa-paper-plane mr-2"></i>发送
+                </button>
+            </div>
+        </div>
+        
+        <!-- 状态信息 -->
+        <div class="bg-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold mb-2">系统状态</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-600">当前选择: <span id="current-agent" class="font-medium text-blue-600">主管工作流</span></p>
+                    <p class="text-sm text-gray-600">API 地址: <span id="api-url">http://localhost:8000</span></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">连接状态: <span id="connection-status" class="font-medium text-green-600">已连接</span></p>
+                    <p class="text-sm text-gray-600">响应时间: <span id="response-time">-- ms</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 全局变量
+        let currentAgent = 'workflow';
+        let isStreaming = false;
+        
+        // DOM 元素
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const currentAgentEl = document.getElementById('current-agent');
+        const connectionStatusEl = document.getElementById('connection-status');
+        const responseTimeEl = document.getElementById('response-time');
+        
+        // 智能体配置
+        const agents = {
+            workflow: {
+                name: '主管工作流',
+                endpoint: '/api/v1/workflow'
+            },
+            exam_analysis: {
+                name: '考试分析',
+                endpoint: '/api/v1/chat'
+            },
+            learning_profile: {
+                name: '学情分析',
+                endpoint: '/api/v1/chat'
+            },
+            teaching_assistant: {
+                name: '办学助手',
+                endpoint: '/api/v1/chat'
+            }
+        };
+        
+        // 初始化
+        function init() {
+            // 绑定事件
+            bindEvents();
+            // 测试连接
+            testConnection();
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            // 智能体选择
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    currentAgent = this.dataset.agent;
+                    currentAgentEl.textContent = agents[currentAgent].name;
+                    
+                    // 清空聊天记录
+                    chatContainer.innerHTML = '<div class="message ai-message"><p>你好！我是' + agents[currentAgent].name + '。请输入你的问题。</p></div>';
+                });
+            });
+            
+            // 发送按钮
+            sendBtn.addEventListener('click', sendMessage);
+            
+            // 回车键发送
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        }
+        
+        // 测试连接
+        async function testConnection() {
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                if (response.ok) {
+                    connectionStatusEl.textContent = '已连接';
+                    connectionStatusEl.className = 'font-medium text-green-600';
+                } else {
+                    connectionStatusEl.textContent = '连接失败';
+                    connectionStatusEl.className = 'font-medium text-red-600';
+                }
+            } catch (error) {
+                connectionStatusEl.textContent = '连接失败';
+                connectionStatusEl.className = 'font-medium text-red-600';
+                console.error('连接测试失败:', error);
+            }
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // 清空输入框
+            userInput.value = '';
+            
+            // 添加用户消息
+            addMessage('user', message);
+            
+            // 显示AI正在输入
+            const typingId = addTypingIndicator();
+            
+            // 记录开始时间
+            const startTime = Date.now();
+            
+            try {
+                // 构建请求体
+                let requestBody;
+                if (currentAgent === 'workflow') {
+                    requestBody = {
+                        message: message,
+                        session_id: 'test_' + Date.now(),
+                        use_local: false
+                    };
+                } else {
+                    requestBody = {
+                        message: message,
+                        agent_type: currentAgent,
+                        session_id: 'test_' + Date.now(),
+                        use_local: false
+                    };
+                }
+                
+                // 发送请求
+                const response = await fetch('http://localhost:8000' + agents[currentAgent].endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                // 计算响应时间
+                const responseTime = Date.now() - startTime;
+                responseTimeEl.textContent = responseTime + ' ms';
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // 移除输入指示器
+                    removeTypingIndicator(typingId);
+                    
+                    // 显示AI回复
+                    if (data.success && data.message) {
+                        addMessage('ai', data.message);
+                    } else if (data.error_message) {
+                        addMessage('ai', '错误: ' + data.error_message);
+                    } else {
+                        addMessage('ai', '收到了响应，但内容格式不正确');
+                    }
+                } else {
+                    // 移除输入指示器
+                    removeTypingIndicator(typingId);
+                    
+                    // 显示错误
+                    const error = await response.json();
+                    addMessage('ai', '错误: ' + (error.detail?.error_message || '请求失败'));
+                }
+            } catch (error) {
+                // 移除输入指示器
+                removeTypingIndicator(typingId);
+                
+                // 显示错误
+                addMessage('ai', '错误: ' + error.message);
+                console.error('发送消息失败:', error);
+            }
+        }
+        
+        // 添加消息
+        function addMessage(type, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type === 'user' ? 'user-message' : 'ai-message'}`;
+            messageDiv.innerHTML = `<p>${content}</p>`;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // 添加输入指示器
+        function addTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai-message typing-indicator';
+            typingDiv.id = 'typing-' + Date.now();
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return typingDiv.id;
+        }
+        
+        // 移除输入指示器
+        function removeTypingIndicator(id) {
+            const typingDiv = document.getElementById(id);
+            if (typingDiv) {
+                typingDiv.remove();
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

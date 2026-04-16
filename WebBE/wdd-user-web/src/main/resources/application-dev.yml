@@ -6,7 +6,7 @@ system:
       location: D:\starCode\nginx-1.27.5\html\resource\web-file
       url: http://127.0.0.1:6001/ueupload/
     #违禁词过滤
-    stop-word-path: D:\libl\2024_ueit_jypt\resource\stop-word #违禁词过滤
+    stop-word-path: D:\libl\2025_ueit_jypt\resource\stop-word #违禁词过滤
     stop-word-enabled: false
   # token配置
   token:
@@ -20,7 +20,7 @@ logging:
 spring:
   servlet:
     multipart:
-      location: D:\libl\2024_ueit_jypt\nginx\html\resource\servlet
+      location: D:\libl\2025_ueit_jypt\nginx\html\resource\servlet
   redis:
     host: 127.0.0.1
     database: 1

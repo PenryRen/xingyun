@@ -9,7 +9,7 @@ import java.util.List;
  * 参数配置 服务层
  *
  * @author libl
- * @date 2024-04-15
+ * @date 2025-04-15
  */
 public interface SysConfigService {
     /**

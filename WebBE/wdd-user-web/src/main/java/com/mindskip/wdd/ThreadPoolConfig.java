@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * 线程池配置
  *
  * @author libl
- * @date 2024-04-07
+ * @date 2025-04-07
  **/
 @Configuration
 public class ThreadPoolConfig

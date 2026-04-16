@@ -8,8 +8,8 @@ import java.io.InputStream;
 /**
  * @version 1.7.0
  * @description: 文件上传
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 public interface FileUploadService {
 

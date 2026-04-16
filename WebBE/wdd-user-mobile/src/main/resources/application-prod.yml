@@ -1,13 +1,13 @@
 system:
   resource:
     #本地存储，配合nginx使用
+    # 须与 nginx「location /ueupload/」的 alias 一致：${INSTALL_PREFIX}/resource/web-file（install.sh 默认 INSTALL_PREFIX=/opt/linhang）
     local-store: true
     file:
-      location: /app/course/resource/web-file
-#      url: http://177.17.100.40:6003/ueupload/
-      url: http://jyptad.ueweixin.com/ueupload/
+      location: /opt/linhang/resource/web-file
+      url: /ueupload
     #违禁词过滤
-    stop-word-path: /app/course/resource/stop-word
+    stop-word-path: /opt/linhang/resource/stop-word
     stop-word-enabled: false
 
 logging:
@@ -17,7 +17,7 @@ logging:
 spring:
   servlet:
     multipart:
-      location: /app/course/resource/servlet
+      location: /opt/linhang/resource/servlet
   redis:
     host: 127.0.0.1
     port: 6379

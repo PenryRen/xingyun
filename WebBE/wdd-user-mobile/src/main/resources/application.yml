@@ -1,5 +1,5 @@
 system:
-  name: 领航智训AI移动平台
+  name: 麟航智训AI移动平台
   paper-status-time-to-live: 5m
   token-time-to-live: 15d
   security-ignore-urls: >

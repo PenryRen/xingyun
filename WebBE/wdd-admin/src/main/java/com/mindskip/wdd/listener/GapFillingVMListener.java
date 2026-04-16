@@ -26,8 +26,8 @@ import java.util.regex.Pattern;
 /**
  * @version 1.7.0
  * @description: 填空题解析
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 @AllArgsConstructor
 public class GapFillingVMListener extends AnalysisEventListener<GapFillingVM> {

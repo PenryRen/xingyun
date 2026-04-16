@@ -29,8 +29,8 @@ import java.util.Date;
 /**
  * @version 1.9.0
  * @description: 交流圈接口
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 @RestController
 @AllArgsConstructor

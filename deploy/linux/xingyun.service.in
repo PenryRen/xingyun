@@ -1,5 +1,5 @@
 [Unit]
-Description=Xingyun (麒麟智训) 后端 Java 服务
+Description=linhang (麒麟智训) 后端 Java 服务
 Documentation=file:@@INSTALL_ROOT@@/be/README.txt
 After=network-online.target
 Wants=network-online.target

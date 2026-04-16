@@ -10,8 +10,8 @@ import java.util.List;
 /**
  * @version 8.5.0
  * @description: 课件题目
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/7 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/7 10:45
  */
 @Mapper
 public interface CourseWareQuestionMapper extends BaseMapper<CourseWareQuestion> {

@@ -18,8 +18,8 @@ import java.io.IOException;
 /**
  * @version 4.1.0
  * @description: 验证码
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/25 10:45
  */
 @Controller
 @AllArgsConstructor

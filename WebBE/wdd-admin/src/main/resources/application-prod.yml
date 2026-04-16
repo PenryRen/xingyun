@@ -32,10 +32,11 @@
 system:
   resource:
     #本地存储，配合nginx使用
+    # 须与 nginx「location /ueupload/」的 alias 一致：${INSTALL_PREFIX}/resource/web-file（install.sh 默认 INSTALL_PREFIX=/opt/linhang）
     local-store: true
     file:
-      location: /app/course/2024_jypt_cjzf/resource/web-file
-      url: http://192.168.1.210:16003/ueupload/
+      location: /opt/linhang/resource/web-file
+      url: /ueupload
 
 logging:
   file:
@@ -49,7 +50,7 @@ jodconverter: #libreoffice安装路径
 spring:
   servlet:
     multipart:
-      location: /app/course/2024_jypt_cjzf/resource/servlet
+      location: /opt/linhang/resource/servlet
   redis:
     host: 127.0.0.1
     port: 6379

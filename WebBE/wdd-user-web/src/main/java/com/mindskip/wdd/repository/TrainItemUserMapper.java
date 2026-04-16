@@ -9,8 +9,8 @@ import java.util.List;
 /**
  * @version 9.0.0
  * @description: 用户培训列表
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/16 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/16 10:45
  */
 @Mapper
 public interface TrainItemUserMapper extends BaseMapper<TrainItemUser> {

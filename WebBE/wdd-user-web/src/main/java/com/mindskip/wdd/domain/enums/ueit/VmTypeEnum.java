@@ -8,7 +8,7 @@ import java.util.Map;
  * 00：主机  01：子机
  *
  * @author libl
- * @date 2024-04-08
+ * @date 2025-04-08
  */
 public enum VmTypeEnum {
 

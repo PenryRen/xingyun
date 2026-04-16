@@ -8,8 +8,8 @@ import javax.validation.constraints.NotNull;
 /**
  * @version 1.9.0
  * @description: 文章评论新增
- * Copyright (C), 2024, 麒技团队
- * @date 2024/7/1 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/7/1 10:45
  */
 @Data
 public class ForumCommentAdd {

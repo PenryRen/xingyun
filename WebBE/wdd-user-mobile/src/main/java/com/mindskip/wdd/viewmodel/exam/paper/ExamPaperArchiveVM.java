@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * @version 6.0.0
  * @description: 试卷分类
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/6 2:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/6 2:45
  */
 @Data
 public class ExamPaperArchiveVM {

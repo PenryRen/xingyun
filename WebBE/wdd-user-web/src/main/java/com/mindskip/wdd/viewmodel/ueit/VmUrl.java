@@ -6,7 +6,7 @@ import lombok.Data;
  * 虚拟机链接 VM
  *
  * @author libl
- * @date 2024-04-11
+ * @date 2025-04-11
  */
 @Data
 public class VmUrl {

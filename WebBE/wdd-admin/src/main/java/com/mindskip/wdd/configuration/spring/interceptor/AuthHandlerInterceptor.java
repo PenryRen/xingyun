@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletResponse;
  * 授权过期验证拦截器
  *
  * @author libl
- * @date 2024-04-16
+ * @date 2025-04-16
  */
 @Component
 public class AuthHandlerInterceptor implements HandlerInterceptor {

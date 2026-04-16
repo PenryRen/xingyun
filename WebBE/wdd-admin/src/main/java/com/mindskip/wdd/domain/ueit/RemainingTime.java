@@ -6,7 +6,7 @@ import lombok.Data;
  * 实训虚拟机时间限制
  *
  * @author libl
- * @date 2024-04-18
+ * @date 2025-04-18
  */
 @Data
 public class RemainingTime {

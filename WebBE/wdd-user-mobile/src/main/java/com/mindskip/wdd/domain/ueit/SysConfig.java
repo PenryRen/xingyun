@@ -13,7 +13,7 @@ import java.util.Date;
  * 参数配置表 sys_config
  *
  * @author libl
- * @date 2024-04-15
+ * @date 2025-04-15
  */
 @Data
 public class SysConfig {

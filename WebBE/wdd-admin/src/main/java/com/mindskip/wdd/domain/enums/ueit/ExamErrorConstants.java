@@ -4,7 +4,7 @@ package com.mindskip.wdd.domain.enums.ueit;
  * 试卷核验 错误信息
  *
  * @author libl
- * @date 2024-04-10
+ * @date 2025-04-10
  */
 public class ExamErrorConstants {
 

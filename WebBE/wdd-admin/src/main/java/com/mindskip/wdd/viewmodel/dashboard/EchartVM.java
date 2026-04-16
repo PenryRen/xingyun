@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * @version 1.7.0
  * @description: Echart图表数据
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 @Data
 public class EchartVM {

@@ -8,7 +8,7 @@ import java.util.Map;
  * 00：Running 启动  01：Shutdown 关机  02：Scheduled 启动中
  *
  * @author libl
- * @date 2024-04-10
+ * @date 2025-04-10
  */
 public enum VmStatusEnum {
 

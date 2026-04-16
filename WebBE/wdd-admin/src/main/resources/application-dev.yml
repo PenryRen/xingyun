@@ -18,7 +18,7 @@ jodconverter:
 spring:
   servlet:
     multipart:
-      location: D:\libl\2024_ueit_jypt\nginx\html\resource\servlet
+      location: D:\libl\2025_ueit_jypt\nginx\html\resource\servlet
   redis:
     host: 127.0.0.1
     database: 1

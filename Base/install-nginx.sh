@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 在 Linux 上安装 Nginx，并将 Nginx/nginx.conf.in 中的 @@INSTALL_ROOT@@ 替换为安装根目录后写入主配置。
 # 目录约定与 install.sh 一致：INSTALL_PREFIX/web/{ueit-user-web,ueit-admin}、INSTALL_PREFIX/resource/web-file
-# 需要 root。用法: sudo INSTALL_PREFIX=/opt/xingyun ./install-nginx.sh
+# 需要 root。用法: sudo INSTALL_PREFIX=/opt/linhang ./install-nginx.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,7 +11,7 @@ if [[ -f "${ENV_FILE}" ]]; then
   source "${ENV_FILE}"
 fi
 
-INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/xingyun}"
+INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/linhang}"
 NGINX_TEMPLATE="${NGINX_CONF_SOURCE:-${SCRIPT_DIR}/../Nginx/nginx.conf.in}"
 NGINX_CONF_TARGET="${NGINX_CONF_TARGET:-/etc/nginx/nginx.conf}"
 UPLOAD_ROOT="${UPLOAD_ROOT:-${INSTALL_PREFIX}/resource/web-file}"

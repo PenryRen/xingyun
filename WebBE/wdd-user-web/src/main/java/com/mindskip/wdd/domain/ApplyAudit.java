@@ -10,8 +10,8 @@ import lombok.Setter;
 /**
  * @version 9.5.0
  * @description: 报名审核
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/28 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/28 10:45
  */
 @Getter
 @Setter

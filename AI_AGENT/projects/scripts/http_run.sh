@@ -1,10 +1,10 @@
 #!/bin/bash
-
 set -e
-# 导出环境变量
 
+# 项目根目录（与 systemd 中 COZE_WORKSPACE_PATH 一致，通常为 INSTALL_PREFIX/ai-agent）
 WORK_DIR="${COZE_WORKSPACE_PATH:-.}"
 PORT=8000
+VENV_PY="${WORK_DIR}/.venv/bin/python"
 
 usage() {
   echo "用法: $0 -p <端口>"
@@ -27,5 +27,12 @@ while getopts "p:h" opt; do
   esac
 done
 
+if [[ -x "$VENV_PY" ]]; then
+  PYTHON="$VENV_PY"
+else
+  PYTHON="python3"
+fi
 
-python ${WORK_DIR}/src/main.py -m http -p $PORT
+cd "${WORK_DIR}/src" || exit 1
+# 与 wdd-user-web 前端 /api/v1/chat 对齐，使用 server.api 应用（非 main.py 的 main:app）
+exec "$PYTHON" -m uvicorn server.api:app --host 0.0.0.0 --port "$PORT"

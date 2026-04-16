@@ -12,7 +12,7 @@ public class AdminMybatisPlusGenerator {
         String outDir = "D://MINDSKIP//ueit//background//ueit//ueit-admin//src//main//";
         FastAutoGenerator.create("jdbc:mysql://192.168.0.96:3306/ueit?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true", "root", "123456").globalConfig(builder -> {
             builder.disableOpenDir()
-                    .author("麒技团队") // 设置作者
+                    .author("麟航团队") // 设置作者
                     .outputDir(outDir + "java"); // 指定输出目录
         }).dataSourceConfig(builder -> builder.typeConvertHandler((globalConfig, typeRegistry, metaInfo) -> {
             int typeCode = metaInfo.getJdbcType().TYPE_CODE;

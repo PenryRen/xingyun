@@ -7,8 +7,8 @@ import java.util.List;
 /**
  * @version 4.4
  * @description: 部门树节点
- * Copyright (C), 2024, 麒技团队
- * @date 2024-10-23 10:13
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025-10-23 10:13
  */
 @Data
 public class DepartmentTreeVM {

@@ -7,8 +7,8 @@ import com.mindskip.wdd.viewmodel.monitor.PaperMonitorPageRequestVM;
 /**
  * @version 9.0.0
  * @description: 考试监考
- * Copyright (C), 2024, 麒技团队
- * @date 2024/10/26 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/10/26 10:45
  */
 public interface ExamPaperMonitorService {
     /**

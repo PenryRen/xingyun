@@ -8,7 +8,7 @@ import java.util.Map;
  * 00：实训   01：考试
  *
  * @author libl
- * @date 2024-04-10
+ * @date 2025-04-10
  */
 public enum VmClassesEnum {
 

@@ -33,6 +33,7 @@ server {
         proxy_read_timeout 300;
     }
 
+    # 须与后端 system.resource.file.location 指向同一目录：@@INSTALL_ROOT@@/resource/web-file
     location /ueupload/ {
         alias @@INSTALL_ROOT@@/resource/web-file/;
     }
@@ -65,6 +66,7 @@ server {
         proxy_read_timeout 300;
     }
 
+    # 须与后端 system.resource.file.location 指向同一目录：@@INSTALL_ROOT@@/resource/web-file
     location /ueupload/ {
         alias @@INSTALL_ROOT@@/resource/web-file/;
     }

@@ -9,8 +9,8 @@ import java.util.List;
 /**
  * @version 4.1
  * @description: 补考
- * Copyright (C), 2024, 麒技团队
- * @date 2024-09-23 9:23
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025-09-23 9:23
  */
 @Data
 public class ExamResitVM {

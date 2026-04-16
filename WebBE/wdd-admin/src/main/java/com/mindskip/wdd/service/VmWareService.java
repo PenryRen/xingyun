@@ -18,7 +18,7 @@ import java.util.List;
  * 虚拟机 Service接口
  *
  * @author libl
- * @date 2024-04-08
+ * @date 2025-04-08
  */
 public interface VmWareService extends IService<VmWare> {
 

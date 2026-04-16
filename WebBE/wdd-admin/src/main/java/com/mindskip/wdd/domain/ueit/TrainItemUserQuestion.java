@@ -9,7 +9,7 @@ import java.io.Serializable;
  * 用户课件功能点对象 t_train_item_user_question
  * 
  * @author libl
- * @date 2024-04-09
+ * @date 2025-04-09
  */
 @Data
 @TableName(value = "t_train_item_user_question")

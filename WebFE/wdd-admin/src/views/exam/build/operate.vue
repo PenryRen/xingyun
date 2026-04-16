@@ -730,7 +730,7 @@ export default {
     },
     /**
      * 改变实训环境
-     * libl 2024.04.01
+     * libl 2025.04.01
      */
     changeVmType(){
       this.form.titleItems=[];

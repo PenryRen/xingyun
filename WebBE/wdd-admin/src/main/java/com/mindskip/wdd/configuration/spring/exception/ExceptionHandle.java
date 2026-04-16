@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 /**
  * @version 1.7.0
  * @description: 系统异常配置
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 @ControllerAdvice
 public class ExceptionHandle {

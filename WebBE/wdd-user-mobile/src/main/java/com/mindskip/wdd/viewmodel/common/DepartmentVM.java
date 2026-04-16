@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * @version 5.9.0
  * @description: 部门列表
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/7 2:42
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/7 2:42
  */
 @Data
 public class DepartmentVM implements Serializable {

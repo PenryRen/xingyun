@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * @version 7.1.0
  * @description: 证书列表
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/2 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/2 10:45
  */
 @Data
 public class CredentialPageRequestVM extends BasePage {

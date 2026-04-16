@@ -7,8 +7,8 @@ import org.apache.ibatis.annotations.Mapper;
 /**
  * @version 9.5.0
  * @description: 子试卷，用于随机组卷
- * Copyright (C), 2024, 麒技团队
- * @date 2024/10/8 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/10/8 10:45
  */
 @Mapper
 public interface ExamPaperChildMapper extends BaseMapper<ExamPaperChild> {

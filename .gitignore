@@ -8,4 +8,10 @@
 
 ### WebFE 构建产物 ###
 WebFE/target/
-WebFE/webfe-*.tar.gz
+WebFE/*.tar.gz
+WebBE/*.tar
+
+### WebBE 构建产物 ###
+WebBE/target/
+WebBE/*.tar.gz
+WebBE/*.tar

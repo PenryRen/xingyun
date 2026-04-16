@@ -1,38 +1,51 @@
 #!/usr/bin/env bash
 # 麒麟智训：Linux 下一键编译、安装目录、systemd、可选 nginx 与数据库初始化。
-# nginx（--with-nginx）：将 deploy/linux/nginx-xingyun.conf.in 中 @@INSTALL_ROOT@@ 替换为 INSTALL_PREFIX，
+# nginx（--with-nginx）：将 deploy/linux/nginx-linhang.conf.in 中 @@INSTALL_ROOT@@ 替换为 INSTALL_PREFIX，
 # 前端静态根为 INSTALL_PREFIX/web/{ueit-user-web,ueit-admin}，上传为 INSTALL_PREFIX/resource/web-file。
 # 默认交互式询问；自动化请加 -y / --non-interactive 并配合环境变量。
 # 用法：
 #   sudo ./install.sh
-#   sudo INSTALL_PREFIX=/srv/xingyun INIT_DB=1 ./install.sh -y
-#   sudo ./install.sh --prefix /opt/xingyun --skip-build --init-db
+#   sudo INSTALL_PREFIX=/srv/linhang INIT_DB=1 ./install.sh -y
+#   sudo ./install.sh --prefix /opt/linhang --skip-build --init-db
 #   sudo ./install.sh -y --with-ai-agent --ai-agent-port 8000
+#   sudo ./install.sh -y --no-infra --no-start-services
+#   sudo SKIP_INSTALL_DEPS=1 ./install.sh -y   # 不自动用包管理器装系统依赖
+#   sudo ./install.sh -y --install-deps         # 非交互但仍自动装系统依赖
 #   ./install.sh --dry-run
 #
 # 非交互：-y / --non-interactive，或环境变量 NON_INTERACTIVE=1；其余变量同前（INSTALL_PREFIX、INIT_DB、MYSQL_* 等）。
+# 交互模式（默认）：向导中会询问是否自动安装缺失的系统依赖；也可用 --install-deps / --skip-install-deps 或环境变量覆盖。
 # WSL：JDK、Maven、Node；WSL2 systemd：/etc/wsl.conf [boot] systemd=true
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_TPL="${REPO_ROOT}/deploy/linux"
 
-INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/xingyun}"
-RUN_USER="${RUN_USER:-xingyun}"
-SERVICE_NAME="${SERVICE_NAME:-xingyun}"
+INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/linhang}"
+RUN_USER="${RUN_USER:-linhang}"
+SERVICE_NAME="${SERVICE_NAME:-linhang}"
 SKIP_BUILD=false
 WITH_NGINX=false
 WITH_AI_AGENT=false
+WITH_INFRA=true
 DRY_RUN=false
 AI_AGENT_PORT="${AI_AGENT_PORT:-8000}"
+SKIP_INSTALL_DEPS="${SKIP_INSTALL_DEPS:-false}"
+AUTO_START_SERVICES="${AUTO_START_SERVICES:-true}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-redis123}"
+REDIS_PORT="${REDIS_PORT:-6379}"
 
 # CLI 显式指定后，交互环节不再询问对应项
 CLI_PREFIX=false
 CLI_SKIP_BUILD=false
 CLI_NGINX=false
 CLI_AI_AGENT=false
+CLI_INFRA=false
 CLI_INIT_DB=false
 CLI_AI_AGENT_PORT=false
+CLI_SKIP_INSTALL_DEPS=false
+CLI_AUTO_INSTALL_DEPS=false
+CLI_AUTO_START=false
 
 normalize_bool() {
   case "${1:-}" in
@@ -43,9 +56,10 @@ normalize_bool() {
 
 NON_INTERACTIVE="$(normalize_bool "${NON_INTERACTIVE:-false}")"
 INIT_DB="$(normalize_bool "${INIT_DB:-false}")"
+AUTO_START_SERVICES="$(normalize_bool "${AUTO_START_SERVICES:-true}")"
 
 usage() {
-  sed -n '2,11p' "$0"
+  sed -n '2,18p' "$0"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -68,6 +82,16 @@ while [[ $# -gt 0 ]]; do
     --with-ai-agent)
       CLI_AI_AGENT=true
       WITH_AI_AGENT=true
+      shift
+      ;;
+    --with-infra)
+      CLI_INFRA=true
+      WITH_INFRA=true
+      shift
+      ;;
+    --no-infra)
+      CLI_INFRA=true
+      WITH_INFRA=false
       shift
       ;;
     --ai-agent-port)
@@ -93,6 +117,26 @@ while [[ $# -gt 0 ]]; do
       NON_INTERACTIVE=true
       shift
       ;;
+    --skip-install-deps)
+      CLI_SKIP_INSTALL_DEPS=true
+      SKIP_INSTALL_DEPS=true
+      shift
+      ;;
+    --install-deps|--auto-install-deps)
+      CLI_AUTO_INSTALL_DEPS=true
+      SKIP_INSTALL_DEPS=false
+      shift
+      ;;
+    --start-services)
+      CLI_AUTO_START=true
+      AUTO_START_SERVICES=true
+      shift
+      ;;
+    --no-start-services)
+      CLI_AUTO_START=true
+      AUTO_START_SERVICES=false
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -110,6 +154,10 @@ if [[ "$NON_INTERACTIVE" != true ]] && [[ ! -t 0 ]]; then
   echo "提示: 标准输入非终端，按非交互模式使用环境变量与默认值（可加 -y 抑制本提示）。" >&2
   NON_INTERACTIVE=true
 fi
+
+SKIP_INSTALL_DEPS="$(normalize_bool "${SKIP_INSTALL_DEPS:-false}")"
+WITH_INFRA="$(normalize_bool "${WITH_INFRA:-true}")"
+AUTO_START_SERVICES="$(normalize_bool "${AUTO_START_SERVICES:-true}")"
 
 run() {
   if [[ "$DRY_RUN" == true ]]; then
@@ -178,8 +226,27 @@ interactive_wizard() {
     fi
   fi
 
+  # 是否通过包管理器自动安装缺失依赖（与 --install-deps / --skip-install-deps 互斥）
+  if [[ "$CLI_SKIP_INSTALL_DEPS" != true ]] && [[ "$CLI_AUTO_INSTALL_DEPS" != true ]]; then
+    local _deps_def=y
+    [[ "$SKIP_INSTALL_DEPS" == true ]] && _deps_def=n
+    local _auto_sysdeps=false
+    read_yesno _auto_sysdeps "$_deps_def" "是否自动安装缺失的系统依赖（JDK/Maven/Node、Python 与 AI 相关库、mysql 客户端、nginx 等，需 root 与联网）"
+    if [[ "$_auto_sysdeps" == true ]]; then
+      SKIP_INSTALL_DEPS=false
+    else
+      SKIP_INSTALL_DEPS=true
+    fi
+  elif [[ "$CLI_AUTO_INSTALL_DEPS" == true ]]; then
+    SKIP_INSTALL_DEPS=false
+  fi
+
   if [[ "$CLI_NGINX" != true ]]; then
-    read_yesno WITH_NGINX n "是否写入 nginx 站点配置（/etc/nginx/conf.d/xingyun.conf）"
+    read_yesno WITH_NGINX n "是否写入 nginx 站点配置（/etc/nginx/conf.d/linhang.conf）"
+  fi
+
+  if [[ "$CLI_INFRA" != true ]]; then
+    read_yesno WITH_INFRA y "是否自动安装并配置基础设施（MySQL + Redis）"
   fi
 
   if [[ "$CLI_INIT_DB" != true ]]; then
@@ -194,6 +261,12 @@ interactive_wizard() {
   if [[ "$WITH_AI_AGENT" == true ]] && [[ "$CLI_AI_AGENT_PORT" != true ]]; then
     read_line "AI_AGENT 端口（AI_AGENT_PORT）" AI_AGENT_PORT
     AI_AGENT_PORT="${AI_AGENT_PORT:-8000}"
+  fi
+
+  if [[ "$CLI_AUTO_START" != true ]]; then
+    local _ast=true
+    read_yesno _ast y "安装结束后是否自动启动服务（后端/AI_AGENT/nginx）"
+    AUTO_START_SERVICES="$_ast"
   fi
 
   if [[ "$INIT_DB" == true ]]; then
@@ -232,10 +305,17 @@ interactive_wizard() {
     fi
   fi
   echo "  nginx 配置:   ${WITH_NGINX}"
+  echo "  基础设施:     ${WITH_INFRA}（MySQL + Redis）"
   echo "  AI_AGENT:     ${WITH_AI_AGENT}"
   if [[ "$WITH_AI_AGENT" == true ]]; then
     echo "  AI_AGENT端口: ${AI_AGENT_PORT}"
   fi
+  if [[ "$SKIP_INSTALL_DEPS" == true ]]; then
+    echo "  自动安装依赖: 否（已跳过）"
+  else
+    echo "  自动安装依赖: 是（缺失时通过包管理器安装）"
+  fi
+  echo "  自动启动服务: ${AUTO_START_SERVICES}"
   echo "  dry-run:      ${DRY_RUN}"
   echo "----------------------"
   local _go=n
@@ -302,6 +382,232 @@ require_root_for_install() {
   fi
 }
 
+# 与 Base/install-linux-deps.sh 一致，用于自动安装系统包
+detect_pkg_mgr_for_install() {
+  if command -v apt-get >/dev/null 2>&1; then echo apt
+  elif command -v dnf >/dev/null 2>&1; then echo dnf
+  elif command -v yum >/dev/null 2>&1; then echo yum
+  elif command -v zypper >/dev/null 2>&1; then echo zypper
+  else
+    echo "错误: 未检测到 apt/dnf/yum/zypper，无法自动安装依赖。请手动安装后重试，或使用 --skip-install-deps。" >&2
+    return 1
+  fi
+}
+
+mysql_service_name() {
+  if systemctl list-unit-files 2>/dev/null | grep -q '^mysql\.service'; then
+    echo mysql
+  elif systemctl list-unit-files 2>/dev/null | grep -q '^mysqld\.service'; then
+    echo mysqld
+  elif systemctl list-unit-files 2>/dev/null | grep -q '^mariadb\.service'; then
+    echo mariadb
+  else
+    echo mysql
+  fi
+}
+
+redis_service_name() {
+  if systemctl list-unit-files 2>/dev/null | grep -q '^redis-server\.service'; then
+    echo redis-server
+  elif systemctl list-unit-files 2>/dev/null | grep -q '^redis\.service'; then
+    echo redis
+  else
+    echo redis-server
+  fi
+}
+
+redis_conf_path() {
+  for p in /etc/redis/redis.conf /etc/redis.conf; do
+    if [[ -f "$p" ]]; then
+      echo "$p"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# 按当前选项安装缺失的系统依赖（需 root；可用 SKIP_INSTALL_DEPS=1 或 --skip-install-deps 关闭）
+auto_install_missing_deps() {
+  if [[ "$SKIP_INSTALL_DEPS" == true ]]; then
+    echo "==> 已跳过自动安装系统依赖（SKIP_INSTALL_DEPS / --skip-install-deps）"
+    return 0
+  fi
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "==> dry-run：将按需自动安装系统依赖（可用 --skip-install-deps 关闭）"
+    return 0
+  fi
+  local pm
+  pm="$(detect_pkg_mgr_for_install)" || return 1
+  echo "==> 包管理器: ${pm}（自动补齐缺失依赖）"
+
+  if [[ "$SKIP_BUILD" != true ]]; then
+    local need=false
+    for c in java mvn node npm; do
+      command -v "$c" >/dev/null 2>&1 || need=true
+    done
+    if [[ "$need" == true ]]; then
+      echo "==> 安装编译依赖: JDK、Maven、Node.js、npm"
+      case "${pm}" in
+        apt)
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -y
+          apt-get install -y openjdk-17-jdk-headless maven nodejs npm \
+            || apt-get install -y default-jdk-headless maven nodejs npm
+          ;;
+        dnf|yum)
+          "${pm}" install -y java-17-openjdk-devel maven nodejs npm \
+            || "${pm}" install -y java-11-openjdk-devel maven nodejs npm
+          ;;
+        zypper)
+          zypper --non-interactive refresh
+          zypper --non-interactive install -y java-17-openjdk-devel maven nodejs npm \
+            || zypper --non-interactive install -y java-11-openjdk-devel maven nodejs npm
+          ;;
+      esac
+    fi
+  fi
+
+  if [[ "$WITH_AI_AGENT" == true ]]; then
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "==> 安装 Python 3"
+      case "${pm}" in
+        apt)
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install -y python3
+          ;;
+        dnf|yum) "${pm}" install -y python3 ;;
+        zypper) zypper --non-interactive install -y python3 ;;
+      esac
+    fi
+    echo "==> 安装 AI_AGENT 相关: venv、pip、C 编译与 dbus-python / PyGObject 等常见系统库"
+    case "${pm}" in
+      apt)
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get install -y \
+          python3-venv python3-pip python3-dev \
+          build-essential pkg-config meson ninja-build \
+          libdbus-1-dev libglib2.0-dev libgirepository1.0-dev libcairo2-dev
+        ;;
+      dnf|yum)
+        "${pm}" install -y python3-devel python3-pip gcc gcc-c++ make \
+          pkgconf-pkg-config meson ninja-build \
+          dbus-devel glib2-devel gobject-introspection-devel cairo-devel \
+          redhat-rpm-config \
+          || echo "警告: 部分 AI_AGENT 系统库安装失败，pip 安装可能仍需手动补包。" >&2
+        ;;
+      zypper)
+        zypper --non-interactive install -y python3-devel python3-pip \
+          gcc gcc-c++ meson ninja pkg-config \
+          dbus-1-devel glib2-devel gobject-introspection-devel cairo-devel \
+          || echo "警告: 部分 AI_AGENT 系统库安装失败，pip 安装可能仍需手动补包。" >&2
+        ;;
+    esac
+  fi
+
+  if [[ "$INIT_DB" == true ]]; then
+    if ! command -v mysql >/dev/null 2>&1; then
+      echo "==> 安装 MySQL/MariaDB 客户端（mysql）"
+      case "${pm}" in
+        apt)
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install -y default-mysql-client \
+            || apt-get install -y mariadb-client
+          ;;
+        dnf|yum)
+          "${pm}" install -y mysql \
+            || "${pm}" install -y mariadb
+          ;;
+        zypper)
+          zypper --non-interactive install -y mariadb-client
+          ;;
+      esac
+    fi
+  fi
+
+  if [[ "$WITH_INFRA" == true ]]; then
+    echo "==> 安装基础设施服务: MySQL Server + Redis Server"
+    case "${pm}" in
+      apt)
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get install -y mysql-server redis-server \
+          || apt-get install -y mariadb-server redis-server
+        ;;
+      dnf|yum)
+        "${pm}" install -y mysql-server redis \
+          || "${pm}" install -y mariadb-server redis
+        ;;
+      zypper)
+        zypper --non-interactive install -y mysql redis \
+          || zypper --non-interactive install -y mariadb redis
+        ;;
+    esac
+  fi
+
+  if [[ "$WITH_NGINX" == true ]]; then
+    if ! command -v nginx >/dev/null 2>&1; then
+      echo "==> 安装 nginx"
+      case "${pm}" in
+        apt)
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install -y nginx
+          ;;
+        dnf|yum) "${pm}" install -y nginx ;;
+        zypper) zypper --non-interactive install -y nginx ;;
+      esac
+    fi
+  fi
+}
+
+configure_and_start_infra() {
+  if [[ "$WITH_INFRA" != true ]]; then
+    return 0
+  fi
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "==> dry-run：将启动并配置 MySQL/Redis（包含 Redis 密码与端口）"
+    return 0
+  fi
+
+  local msvc rsvc rconf rp
+  msvc="$(mysql_service_name)"
+  rsvc="$(redis_service_name)"
+
+  echo "==> 启动并启用数据库服务: ${msvc}"
+  systemctl enable "${msvc}" 2>/dev/null || true
+  systemctl restart "${msvc}"
+  systemctl is-active --quiet "${msvc}" || {
+    echo "错误: 服务 ${msvc} 未运行" >&2
+    exit 1
+  }
+
+  if rconf="$(redis_conf_path)"; then
+    rp="${REDIS_PASSWORD//\'/\'\\\'\'}"
+    if grep -qE '^[[:space:]]*requirepass[[:space:]]+' "${rconf}"; then
+      sed -i -E "s/^[[:space:]]*requirepass[[:space:]].*/requirepass ${rp}/" "${rconf}"
+    elif grep -qE '^# requirepass' "${rconf}"; then
+      sed -i -E "s/^# requirepass.*/requirepass ${rp}/" "${rconf}"
+    else
+      printf '\nrequirepass %s\n' "${rp}" >> "${rconf}"
+    fi
+    if grep -qE '^[[:space:]]*port[[:space:]]+' "${rconf}"; then
+      sed -i -E "s/^[[:space:]]*port[[:space:]].*/port ${REDIS_PORT}/" "${rconf}"
+    elif grep -qE '^# port' "${rconf}"; then
+      sed -i -E "s/^# port.*/port ${REDIS_PORT}/" "${rconf}"
+    else
+      printf '\nport %s\n' "${REDIS_PORT}" >> "${rconf}"
+    fi
+  else
+    echo "警告: 未找到 redis.conf，跳过密码与端口写入。" >&2
+  fi
+
+  echo "==> 启动并启用 Redis 服务: ${rsvc}"
+  systemctl enable "${rsvc}" 2>/dev/null || true
+  systemctl restart "${rsvc}"
+  systemctl is-active --quiet "${rsvc}" || {
+    echo "错误: 服务 ${rsvc} 未运行" >&2
+    exit 1
+  }
+}
+
 check_build_deps() {
   for cmd in java mvn node npm; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -363,7 +669,7 @@ assert_artifacts() {
 install_tree() {
   local root="$1"
   echo "==> 安装文件到 ${root}"
-  run install -d -m 755 "${root}/be" "${root}/web" "${root}/resource/web-file"
+  run install -d -m 755 "${root}/be" "${root}/web" "${root}/resource/web-file" "${root}/resource/servlet" "${root}/resource/stop-word"
   if [[ "$DRY_RUN" == true ]]; then
     echo "[dry-run] 将复制 WebBE/target/*.jar、start.sh 与 WebFE/target 下静态目录"
     return 0
@@ -445,6 +751,8 @@ init_database() {
   local db="${MYSQL_DATABASE:-wdd}"
   local admin="${MYSQL_ADMIN_USER:-root}"
   local pass="${MYSQL_ADMIN_PASSWORD:-}"
+  local app_user="${MYSQL_APP_USER:-$db}"
+  local app_pass="${MYSQL_APP_PASSWORD:-wdd123}"
   echo "==> 初始化数据库 ${host}:${port}/${db}（init.sql 含 DROP TABLE，将覆盖已有表）"
   local args=( -h"$host" -P"$port" -u"$admin" )
   if [[ -n "$pass" ]]; then
@@ -453,11 +761,13 @@ init_database() {
   mysql "${args[@]}" -e "CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
   mysql "${args[@]}" "$db" <"$sql"
   echo "==> 已导入 $sql"
-  if [[ -n "${MYSQL_APP_USER:-}" ]] && [[ -n "${MYSQL_APP_PASSWORD:-}" ]]; then
-    echo "==> 创建/授权应用账号 ${MYSQL_APP_USER}"
+  if [[ -n "${app_user}" ]] && [[ -n "${app_pass}" ]]; then
+    echo "==> 创建/授权应用账号 ${app_user}"
     mysql "${args[@]}" -e "
-CREATE USER IF NOT EXISTS '${MYSQL_APP_USER}'@'%' IDENTIFIED BY '${MYSQL_APP_PASSWORD}';
-GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${MYSQL_APP_USER}'@'%';
+CREATE USER IF NOT EXISTS '${app_user}'@'%' IDENTIFIED BY '${app_pass}';
+CREATE USER IF NOT EXISTS '${app_user}'@'127.0.0.1' IDENTIFIED BY '${app_pass}';
+GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${app_user}'@'%';
+GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${app_user}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 "
   fi
@@ -480,8 +790,8 @@ chown_install() {
 
 install_systemd_unit() {
   local unit="/etc/systemd/system/${SERVICE_NAME}.service"
-  if [[ ! -f "${DEPLOY_TPL}/xingyun.service.in" ]]; then
-    echo "错误: 缺少模板 ${DEPLOY_TPL}/xingyun.service.in" >&2
+  if [[ ! -f "${DEPLOY_TPL}/linhang.service.in" ]]; then
+    echo "错误: 缺少模板 ${DEPLOY_TPL}/linhang.service.in" >&2
     exit 1
   fi
   echo "==> 写入 systemd 单元 ${unit}"
@@ -489,7 +799,7 @@ install_systemd_unit() {
     echo "[dry-run] sed 模板 -> ${unit}"
     return 0
   fi
-  sed -e "s|@@INSTALL_ROOT@@|${INSTALL_PREFIX}|g" -e "s|@@RUN_USER@@|${RUN_USER}|g" "${DEPLOY_TPL}/xingyun.service.in" >"$unit"
+  sed -e "s|@@INSTALL_ROOT@@|${INSTALL_PREFIX}|g" -e "s|@@RUN_USER@@|${RUN_USER}|g" "${DEPLOY_TPL}/linhang.service.in" >"$unit"
   chmod 644 "$unit"
   systemctl daemon-reload
   systemctl enable "${SERVICE_NAME}.service"
@@ -520,9 +830,9 @@ install_ai_agent_systemd_unit() {
 }
 
 install_nginx_conf() {
-  local dst="/etc/nginx/conf.d/xingyun.conf"
-  if [[ ! -f "${DEPLOY_TPL}/nginx-xingyun.conf.in" ]]; then
-    echo "错误: 缺少模板 ${DEPLOY_TPL}/nginx-xingyun.conf.in" >&2
+  local dst="/etc/nginx/conf.d/linhang.conf"
+  if [[ ! -f "${DEPLOY_TPL}/nginx-linhang.conf.in" ]]; then
+    echo "错误: 缺少模板 ${DEPLOY_TPL}/nginx-linhang.conf.in" >&2
     exit 1
   fi
   echo "==> 写入 nginx 配置 ${dst}（前端/上传路径基于 INSTALL_PREFIX=${INSTALL_PREFIX}）"
@@ -530,7 +840,7 @@ install_nginx_conf() {
     echo "[dry-run] 替换 @@INSTALL_ROOT@@ -> ${INSTALL_PREFIX} -> ${dst}"
     return 0
   fi
-  substitute_install_root "${DEPLOY_TPL}/nginx-xingyun.conf.in" "$dst"
+  substitute_install_root "${DEPLOY_TPL}/nginx-linhang.conf.in" "$dst"
   chmod 644 "$dst"
   if command -v nginx >/dev/null 2>&1; then
     if nginx -t 2>/dev/null; then
@@ -543,6 +853,44 @@ install_nginx_conf() {
   fi
 }
 
+start_deployed_services() {
+  if [[ "$AUTO_START_SERVICES" != true ]]; then
+    echo "==> 已跳过自动启动服务（--no-start-services）"
+    return 0
+  fi
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "==> dry-run：将自动启动后端/AI_AGENT/nginx 服务"
+    return 0
+  fi
+
+  echo "==> 启动后端服务 ${SERVICE_NAME}.service"
+  systemctl restart "${SERVICE_NAME}.service"
+  systemctl is-active --quiet "${SERVICE_NAME}.service" || {
+    echo "错误: ${SERVICE_NAME}.service 启动失败，请查看: systemctl status ${SERVICE_NAME}.service" >&2
+    exit 1
+  }
+
+  if [[ "$WITH_AI_AGENT" == true ]]; then
+    echo "==> 启动 AI_AGENT 服务 ${SERVICE_NAME}-ai-agent.service"
+    systemctl restart "${SERVICE_NAME}-ai-agent.service"
+    systemctl is-active --quiet "${SERVICE_NAME}-ai-agent.service" || {
+      echo "错误: ${SERVICE_NAME}-ai-agent.service 启动失败，请查看: systemctl status ${SERVICE_NAME}-ai-agent.service" >&2
+      exit 1
+    }
+  fi
+
+  if [[ "$WITH_NGINX" == true ]]; then
+    if command -v nginx >/dev/null 2>&1; then
+      echo "==> 重启 nginx"
+      systemctl restart nginx
+      systemctl is-active --quiet nginx || {
+        echo "错误: nginx 启动失败，请查看: systemctl status nginx" >&2
+        exit 1
+      }
+    fi
+  fi
+}
+
 main() {
   if [[ "$NON_INTERACTIVE" != true ]]; then
     interactive_wizard
@@ -551,6 +899,8 @@ main() {
   finalize_install_prefix
   validate_ai_agent_port
   require_root_for_install
+  auto_install_missing_deps
+  configure_and_start_infra
   do_build
   assert_artifacts
   init_database
@@ -569,19 +919,24 @@ main() {
   if [[ "$WITH_NGINX" == true ]]; then
     install_nginx_conf
   fi
+  start_deployed_services
   echo
   echo "安装完成。"
   echo "  数据目录: ${INSTALL_PREFIX}"
   echo "  服务名:   ${SERVICE_NAME}.service"
   echo "  启动:     sudo systemctl start ${SERVICE_NAME}"
   echo "  状态:     sudo systemctl status ${SERVICE_NAME}"
+  if [[ "$WITH_INFRA" == true ]]; then
+    echo "  MySQL:    127.0.0.1:3306（初始化库时默认应用账号: ${MYSQL_APP_USER:-${MYSQL_DATABASE:-wdd}}）"
+    echo "  Redis:    127.0.0.1:${REDIS_PORT}（密码: ${REDIS_PASSWORD}）"
+  fi
   if [[ "$WITH_AI_AGENT" == true ]]; then
     echo "  AI_AGENT: sudo systemctl start ${SERVICE_NAME}-ai-agent"
     echo "            sudo systemctl status ${SERVICE_NAME}-ai-agent"
     echo "            本地测试: curl http://127.0.0.1:${AI_AGENT_PORT}/health"
   fi
   if [[ "$WITH_NGINX" == true ]]; then
-    echo "  nginx:    /etc/nginx/conf.d/xingyun.conf（@@INSTALL_ROOT@@ → ${INSTALL_PREFIX}；前端 web/、上传 resource/web-file）"
+    echo "  nginx:    /etc/nginx/conf.d/linhang.conf（@@INSTALL_ROOT@@ → ${INSTALL_PREFIX}；前端 web/、上传 resource/web-file）"
   fi
   if [[ "$WITH_NGINX" != true ]]; then
     echo "  提示: 需要 nginx 时可重新运行本脚本并选择写入 nginx，或: sudo INSTALL_PREFIX=${INSTALL_PREFIX} $0 -y --with-nginx --skip-build"

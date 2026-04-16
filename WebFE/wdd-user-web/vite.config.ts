@@ -34,6 +34,10 @@ export default ({mode}: ConfigEnv): UserConfig => {
         '/api': {
           target: 'http://192.168.1.210:16000',
           changeOrigin: true
+        },
+        '/ai-agent': {
+          target: 'http://127.0.0.1:8000',
+          changeOrigin: true
         }
       }
     },

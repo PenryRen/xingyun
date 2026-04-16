@@ -7,6 +7,7 @@
 #   sudo ./install.sh
 #   sudo INSTALL_PREFIX=/srv/xingyun INIT_DB=1 ./install.sh -y
 #   sudo ./install.sh --prefix /opt/xingyun --skip-build --init-db
+#   sudo ./install.sh -y --with-ai-agent --ai-agent-port 8000
 #   ./install.sh --dry-run
 #
 # 非交互：-y / --non-interactive，或环境变量 NON_INTERACTIVE=1；其余变量同前（INSTALL_PREFIX、INIT_DB、MYSQL_* 等）。
@@ -21,13 +22,17 @@ RUN_USER="${RUN_USER:-xingyun}"
 SERVICE_NAME="${SERVICE_NAME:-xingyun}"
 SKIP_BUILD=false
 WITH_NGINX=false
+WITH_AI_AGENT=false
 DRY_RUN=false
+AI_AGENT_PORT="${AI_AGENT_PORT:-8000}"
 
 # CLI 显式指定后，交互环节不再询问对应项
 CLI_PREFIX=false
 CLI_SKIP_BUILD=false
 CLI_NGINX=false
+CLI_AI_AGENT=false
 CLI_INIT_DB=false
+CLI_AI_AGENT_PORT=false
 
 normalize_bool() {
   case "${1:-}" in
@@ -59,6 +64,16 @@ while [[ $# -gt 0 ]]; do
       CLI_NGINX=true
       WITH_NGINX=true
       shift
+      ;;
+    --with-ai-agent)
+      CLI_AI_AGENT=true
+      WITH_AI_AGENT=true
+      shift
+      ;;
+    --ai-agent-port)
+      CLI_AI_AGENT_PORT=true
+      AI_AGENT_PORT="${2:?}"
+      shift 2
       ;;
     --dry-run)
       DRY_RUN=true
@@ -173,6 +188,14 @@ interactive_wizard() {
     read_yesno INIT_DB n "是否初始化 MySQL 数据库"
   fi
 
+  if [[ "$CLI_AI_AGENT" != true ]]; then
+    read_yesno WITH_AI_AGENT n "是否部署 AI_AGENT 服务（Python 虚拟环境 + systemd）"
+  fi
+  if [[ "$WITH_AI_AGENT" == true ]] && [[ "$CLI_AI_AGENT_PORT" != true ]]; then
+    read_line "AI_AGENT 端口（AI_AGENT_PORT）" AI_AGENT_PORT
+    AI_AGENT_PORT="${AI_AGENT_PORT:-8000}"
+  fi
+
   if [[ "$INIT_DB" == true ]]; then
     echo
     read_line "MySQL 主机（MYSQL_HOST）" MYSQL_HOST
@@ -209,6 +232,10 @@ interactive_wizard() {
     fi
   fi
   echo "  nginx 配置:   ${WITH_NGINX}"
+  echo "  AI_AGENT:     ${WITH_AI_AGENT}"
+  if [[ "$WITH_AI_AGENT" == true ]]; then
+    echo "  AI_AGENT端口: ${AI_AGENT_PORT}"
+  fi
   echo "  dry-run:      ${DRY_RUN}"
   echo "----------------------"
   local _go=n
@@ -255,6 +282,16 @@ dst.write_text(src.read_text(encoding='utf-8').replace('@@INSTALL_ROOT@@', path)
   fi
 }
 
+validate_ai_agent_port() {
+  if [[ "$WITH_AI_AGENT" != true ]]; then
+    return 0
+  fi
+  if [[ ! "${AI_AGENT_PORT}" =~ ^[0-9]+$ ]] || (( AI_AGENT_PORT < 1 || AI_AGENT_PORT > 65535 )); then
+    echo "错误: AI_AGENT_PORT 必须是 1-65535 的整数，当前: ${AI_AGENT_PORT}" >&2
+    exit 1
+  fi
+}
+
 require_root_for_install() {
   if [[ "$DRY_RUN" == true ]]; then
     return 0
@@ -269,6 +306,15 @@ check_build_deps() {
   for cmd in java mvn node npm; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
       echo "错误: 未找到「$cmd」，请先安装 JDK 8+、Maven、Node.js 16+。" >&2
+      exit 1
+    fi
+  done
+}
+
+check_ai_agent_deps() {
+  for cmd in python3; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      echo "错误: 未找到「$cmd」，部署 AI_AGENT 需要 Python 3.8+。" >&2
       exit 1
     fi
   done
@@ -337,6 +383,44 @@ install_tree() {
     printf '%s\n' "麒麟智训后端安装目录：${root}/be" "静态资源：${root}/web/{ueit-user-web,ueit-admin}" "上传目录（需与后端配置一致）：${root}/resource/web-file"
   } > "${root}/be/README.txt"
   chmod 644 "${root}/be/README.txt"
+}
+
+install_ai_agent_tree() {
+  local src="${REPO_ROOT}/AI_AGENT/projects"
+  local dst="${INSTALL_PREFIX}/ai-agent"
+  if [[ ! -d "$src" ]]; then
+    echo "错误: 未找到 AI_AGENT 项目目录 $src" >&2
+    exit 1
+  fi
+  echo "==> 安装 AI_AGENT 到 ${dst}"
+  run install -d -m 755 "${dst}"
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "[dry-run] 将复制 AI_AGENT/projects 到 ${dst}"
+    return 0
+  fi
+  cp -a "${src}/." "${dst}/"
+  install -d -m 755 "${dst}/logs"
+  if [[ ! -f "${dst}/.env" ]] && [[ -f "${dst}/.env.example" ]]; then
+    cp -a "${dst}/.env.example" "${dst}/.env"
+  fi
+}
+
+setup_ai_agent_venv() {
+  local dst="${INSTALL_PREFIX}/ai-agent"
+  local py="${dst}/.venv/bin/python"
+  local req="${dst}/requirements.txt"
+  if [[ ! -f "$req" ]]; then
+    echo "错误: 缺少 AI_AGENT 依赖文件 $req" >&2
+    exit 1
+  fi
+  echo "==> 创建 AI_AGENT Python 虚拟环境"
+  run python3 -m venv "${dst}/.venv"
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "[dry-run] 将安装 AI_AGENT Python 依赖"
+    return 0
+  fi
+  "$py" -m pip install --upgrade pip
+  "$py" -m pip install -r "$req"
 }
 
 init_database() {
@@ -412,6 +496,29 @@ install_systemd_unit() {
   echo "==> 已 enable ${SERVICE_NAME}.service；启动请执行: sudo systemctl start ${SERVICE_NAME}"
 }
 
+install_ai_agent_systemd_unit() {
+  local unit="/etc/systemd/system/${SERVICE_NAME}-ai-agent.service"
+  local tpl="${DEPLOY_TPL}/ai-agent.service.in"
+  if [[ ! -f "$tpl" ]]; then
+    echo "错误: 缺少模板 $tpl" >&2
+    exit 1
+  fi
+  echo "==> 写入 AI_AGENT systemd 单元 ${unit}"
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "[dry-run] sed 模板 -> ${unit}"
+    return 0
+  fi
+  sed \
+    -e "s|@@INSTALL_ROOT@@|${INSTALL_PREFIX}|g" \
+    -e "s|@@RUN_USER@@|${RUN_USER}|g" \
+    -e "s|@@AI_AGENT_PORT@@|${AI_AGENT_PORT}|g" \
+    "$tpl" >"$unit"
+  chmod 644 "$unit"
+  systemctl daemon-reload
+  systemctl enable "${SERVICE_NAME}-ai-agent.service"
+  echo "==> 已 enable ${SERVICE_NAME}-ai-agent.service；启动请执行: sudo systemctl start ${SERVICE_NAME}-ai-agent"
+}
+
 install_nginx_conf() {
   local dst="/etc/nginx/conf.d/xingyun.conf"
   if [[ ! -f "${DEPLOY_TPL}/nginx-xingyun.conf.in" ]]; then
@@ -442,14 +549,23 @@ main() {
   fi
 
   finalize_install_prefix
+  validate_ai_agent_port
   require_root_for_install
   do_build
   assert_artifacts
   init_database
   install_tree "$INSTALL_PREFIX"
+  if [[ "$WITH_AI_AGENT" == true ]]; then
+    check_ai_agent_deps
+    install_ai_agent_tree
+    setup_ai_agent_venv
+  fi
   ensure_user
   chown_install
   install_systemd_unit
+  if [[ "$WITH_AI_AGENT" == true ]]; then
+    install_ai_agent_systemd_unit
+  fi
   if [[ "$WITH_NGINX" == true ]]; then
     install_nginx_conf
   fi
@@ -459,11 +575,19 @@ main() {
   echo "  服务名:   ${SERVICE_NAME}.service"
   echo "  启动:     sudo systemctl start ${SERVICE_NAME}"
   echo "  状态:     sudo systemctl status ${SERVICE_NAME}"
+  if [[ "$WITH_AI_AGENT" == true ]]; then
+    echo "  AI_AGENT: sudo systemctl start ${SERVICE_NAME}-ai-agent"
+    echo "            sudo systemctl status ${SERVICE_NAME}-ai-agent"
+    echo "            本地测试: curl http://127.0.0.1:${AI_AGENT_PORT}/health"
+  fi
   if [[ "$WITH_NGINX" == true ]]; then
     echo "  nginx:    /etc/nginx/conf.d/xingyun.conf（@@INSTALL_ROOT@@ → ${INSTALL_PREFIX}；前端 web/、上传 resource/web-file）"
   fi
   if [[ "$WITH_NGINX" != true ]]; then
     echo "  提示: 需要 nginx 时可重新运行本脚本并选择写入 nginx，或: sudo INSTALL_PREFIX=${INSTALL_PREFIX} $0 -y --with-nginx --skip-build"
+  fi
+  if [[ "$WITH_AI_AGENT" != true ]]; then
+    echo "  提示: 需要 AI_AGENT 时可执行: sudo INSTALL_PREFIX=${INSTALL_PREFIX} $0 -y --with-ai-agent --skip-build"
   fi
   if [[ "$INIT_DB" != true ]]; then
     echo "  数据库: 若尚未导入，可重新运行本脚本并选择初始化数据库，或: sudo $0 -y --skip-build --init-db"

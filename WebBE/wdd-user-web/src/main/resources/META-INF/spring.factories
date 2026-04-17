@@ -1,6 +1,6 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   com.mindskip.wdd.configuration.ueit.VmWareConfigKey,\
-  com.mindskip.wdd.configuration.ueit.VmWareApiConfig
+  com.mindskip.wdd.configuration.aliyun.AliyunEcdProperties
 
 
 

@@ -7,7 +7,6 @@ system:
     - /api/user/register
     - /api/user/login
     - /api/kaptcha/refresh
-    - /api/vmWare/ssh
   encrypt:
     database:
       rsa:
@@ -108,20 +107,16 @@ vm-ware:
     trainTimeLimitConfigKey: sys.vm.trainTimeLimit
     #实训虚拟机过期时间限制 单位(分钟)
     expiredTimeLimitConfigKey: sys.vm.expiredTimeLimit
-  api:
-    #接口前缀
-    urlPrefix: http://192.168.1.210:32080/
-    #授权时间接口地址 Get
-    expiration: api/v1/getProtected
-    #获取虚拟化列表 Get
-    list: api/v1/vms
-    #虚拟机关机接口地址 Put
-    shutdown: api/v1/vms/stop-virtual-machine
-    #虚拟机开机接口地址 Put
-    start: api/v1/vms/start-virtual-machine
-    #虚拟机重启接口地址 Put
-    reStart: api/v1/vms/restart-virtual-machine
-    #虚拟机克隆接口地址 Post
-    clone: api/v1/cloneLocalVM
-    #虚拟机删除接口地址 Delete
-    delete: api/v1/vms
+
+aliyun:
+  ecd:
+    access-key-id: ""
+    access-key-secret: ""
+    region-id: cn-hangzhou
+    office-site-id: ""
+    policy-group-id: ""
+    charge-type: PostPaid
+    ecd-endpoint: ""
+    appstream-endpoint: ""
+    wuying-open-type: inline
+    wuying-resource-type: ""

@@ -32,6 +32,9 @@
         <mysql.version>8.0.33</mysql.version>
         <com.qcloud.version>5.6.39</com.qcloud.version>
         <mybatis.plus.version>3.5.3.1</mybatis.plus.version>
+        <!-- 阿里云无影 OpenAPI（ecd20200930 在 Central 无 4.0.3，4.0.x 可用 4.0.0/4.0.1） -->
+        <aliyun.ecd20200930.version>4.0.1</aliyun.ecd20200930.version>
+        <aliyun.appstream.center.version>1.0.4</aliyun.appstream.center.version>
     </properties>
 
 

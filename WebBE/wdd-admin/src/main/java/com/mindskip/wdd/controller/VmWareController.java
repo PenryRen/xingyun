@@ -12,8 +12,6 @@ import com.mindskip.wdd.configuration.utility.BeanValidator;
 import com.mindskip.wdd.context.WebContext;
 import com.mindskip.wdd.domain.User;
 import com.mindskip.wdd.domain.allocation;
-import com.mindskip.wdd.domain.ueit.SshParam;
-import com.mindskip.wdd.domain.ueit.SshResult;
 import com.mindskip.wdd.domain.ueit.VmWare;
 import com.mindskip.wdd.listener.VmWareListener;
 import com.mindskip.wdd.mapping.VmWareMapping;
@@ -66,8 +64,6 @@ public class VmWareController {
 
     private final SystemService systemService;
 
-    private final SshService sshService;
-
     private final BeanValidator beanValidator;
 
     private final FileUploadService fileUploadService;
@@ -86,6 +82,53 @@ public class VmWareController {
     @PreAuthorize("vmWare:page")
     public RestResponse<PageInfo<VmWare>> page(@RequestBody @Valid VmWarePageRequestVM requestVM) {
         return RestResponse.ok(vmWareService.page(requestVM));
+    }
+
+    /**
+     * 按主键查询虚拟机（用于管理端编辑页）
+     */
+    @PostMapping("/select/{id}")
+    @PreAuthorize({"vmWare:page", "vmWare:import"})
+    public RestResponse selectById(@PathVariable("id") Long id) {
+        VmWare row = vmWareService.getById(id);
+        if (row == null) {
+            return RestResponse.fail(500, "记录不存在");
+        }
+        return RestResponse.ok(row);
+    }
+
+    /**
+     * 更新主机模板行（无影场景下 url 字段存云电脑镜像 BundleId）。子机由云端按需创建，不允许在此修改。
+     */
+    @PostMapping("/edit")
+    @PreAuthorize({"vmWare:page", "vmWare:import"})
+    public RestResponse vmWareEdit(@RequestBody VmWare incoming) {
+        if (incoming == null || incoming.getId() == null) {
+            return RestResponse.fail(500, "参数错误");
+        }
+        VmWare existing = vmWareService.getById(incoming.getId());
+        if (existing == null) {
+            return RestResponse.fail(500, "记录不存在");
+        }
+        if (!"00".equals(existing.getVmType()) || StringUtils.isNotEmpty(existing.getVmParentId())) {
+            return RestResponse.fail(500, "仅可编辑主机模板（类型为主机且无父级），子机由云端按需创建，请勿在此修改");
+        }
+        existing.setVmName(incoming.getVmName());
+        existing.setVmPassword(incoming.getVmPassword());
+        existing.setVmUsername(incoming.getVmUsername());
+        existing.setVmCpu(incoming.getVmCpu());
+        existing.setVmStorage(incoming.getVmStorage());
+        existing.setDiskName(incoming.getDiskName());
+        existing.setDiskSize(incoming.getDiskSize());
+        existing.setClasses(incoming.getClasses());
+        existing.setUrl(incoming.getUrl());
+        existing.setVmIp(incoming.getVmIp());
+        existing.setValidCreateTime(incoming.getValidCreateTime());
+        existing.setValidEndTime(incoming.getValidEndTime());
+        existing.setDisabled(incoming.getDisabled());
+        existing.setUpdateUser(getCurrentUser().getUserName());
+        vmWareService.updateById(existing);
+        return RestResponse.okMessage("保存成功");
     }
 
     /**
@@ -310,11 +353,6 @@ public class VmWareController {
     @PostMapping("/pairOneDecode")
     public RestResponse pairOneDecode(@RequestBody String content) {
         return RestResponse.ok(systemService.pairOneDecode(content));
-    }
-
-    @PostMapping("/ssh")
-    public SshResult ssh(@RequestBody SshParam sshParam) {
-        return sshService.executeCommand(sshParam);
     }
 
     /**

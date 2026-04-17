@@ -161,6 +161,18 @@
             <artifactId>jodconverter-local</artifactId>
             <version>4.4.2</version>
         </dependency>
+        <!-- 阿里云无影云桌面 OpenAPI -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>ecd20200930</artifactId>
+            <version>${aliyun.ecd20200930.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>appstream_center20210218</artifactId>
+            <version>${aliyun.appstream.center.version}</version>
+        </dependency>
+
         <!-- jsch支持 -->
         <dependency>
             <groupId>com.jcraft</groupId>

@@ -65,7 +65,8 @@
           </el-dialog>
         </div>
         <div class="vm-train-right-box-bottom">
-          <iframe :src="vmUrl" id="myIframe" ref="myIframe" style="width: 100%; height: 100%"></iframe>
+          <iframe v-if="!wuyingMode" :src="vmUrl" id="myIframe" ref="myIframe" style="width: 100%; height: 100%; border: 0"></iframe>
+          <iframe v-show="wuyingMode" id="wuying-desktop-session" title="无影云桌面" style="width: 100%; height: 100%; border: 0"></iframe>
         </div>
       </div>
     </div>
@@ -147,6 +148,7 @@
   import {select, watch} from '@/api/courseWare'
   import {paperDecrypt, setPageTitle, formatSeconds} from '@/utils/index'
   import {checkVmWare, getVmWare, checkTrain, queryRemainingTime, renewal} from '@/api/vmWare'
+  import {startWuyingDesktopSession} from '@/utils/wuyingDesktop'
   import {userQuestionList} from '@/api/trainItemUserQuestion'
   import {CircleCheck, Timer, Tickets, VideoPlay} from '@element-plus/icons-vue'
   import Split from 'split.js'
@@ -191,6 +193,8 @@
           start: true
         },
         vmUrl: '',
+        wuyingMode: false,
+        lastRemoteResp: null,
         tableData: [],
         showDialog: false,
         remainTime: 0,
@@ -359,7 +363,9 @@
       setVmUrl() {
         getVmWare(this.vmQuery).then(re => {
           if (re.code === 1) {
-            this.vmUrl = re.response.url;
+            this.lastRemoteResp = re.response
+            this.wuyingMode = !!(re.response.useWuyingWebSdk && re.response.authCode)
+            this.vmUrl = this.wuyingMode ? '' : (re.response.url || '')
             this.vmQuery.vmGuid = re.response.vmGuid;
             if (re.response.status !== "00" && re.response.msg != null && re.response.msg !== '') {
               this.$confirm(re.response.msg, '提示', {
@@ -420,6 +426,12 @@
             sizes: [45, 55],
             minSize: [600, 1040],
           });
+          if (this.wuyingMode && this.lastRemoteResp && this.lastRemoteResp.authCode) {
+            const r = this.lastRemoteResp
+            startWuyingDesktopSession(r).catch(e => {
+              this.$message.error(e.message || '无影连接失败')
+            })
+          }
         });
         this.getRemainTime();
         this.getQuestionList();

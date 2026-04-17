@@ -1,21 +1,17 @@
 package com.mindskip.wdd.service.impl;
 
-import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.http.HttpResponse;
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.mindskip.wdd.base.RestResponse;
 import com.mindskip.wdd.base.SystemCode;
-import com.mindskip.wdd.configuration.ueit.VmWareApiConfig;
+import com.mindskip.wdd.configuration.aliyun.AliyunEcdProperties;
 import com.mindskip.wdd.configuration.ueit.VmWareConfigKey;
 import com.mindskip.wdd.constant.CacheConstants;
-import com.mindskip.wdd.constant.HttpStatus;
 import com.mindskip.wdd.domain.User;
 import com.mindskip.wdd.domain.enums.ueit.VmClassesEnum;
 import com.mindskip.wdd.domain.enums.ueit.VmStatusEnum;
@@ -27,7 +23,7 @@ import com.mindskip.wdd.repository.VmWareMapper;
 import com.mindskip.wdd.service.SysConfigService;
 import com.mindskip.wdd.service.SystemService;
 import com.mindskip.wdd.service.VmWareService;
-import com.mindskip.wdd.utility.ueit.HttpUtils;
+import com.mindskip.wdd.service.aliyun.AliyunEcdDesktopClient;
 import com.mindskip.wdd.viewmodel.ueit.VmWareImport;
 import com.mindskip.wdd.viewmodel.ueit.VmWarePageRequestVM;
 import com.mindskip.wdd.viewmodel.ueit.VmWareVM;
@@ -62,11 +58,13 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
 
     private final VmWareConfigKey vmWareConfigKey;
 
-    private final VmWareApiConfig vmWareApiConfig;
-
     private final SystemService systemService;
 
     private final UserMapper userMapper;
+
+    private final AliyunEcdDesktopClient aliyunEcdDesktopClient;
+
+    private final AliyunEcdProperties aliyunEcdProperties;
     /**
      * 获取实训环境列表
      *
@@ -217,25 +215,19 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
      */
     @Override
     public RestResponse shutdown(VmWare vmWare) {
+        if (!aliyunEcdProperties.isConfigured() || StringUtils.isEmpty(vmWare.getGuid())
+                || !VmTypeEnum.Child.getCode().equals(vmWare.getVmType())) {
+            return RestResponse.failMessage("关机失败");
+        }
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("vmName", vmWare.getVmName());
-            params.put("forseRestart", "true");
-
-            HttpResponse httpResponse = HttpUtils.sendPut(vmWareApiConfig.getShutdown(), JSONObject.toJSONString(params));
-            String body = httpResponse.body();
-            JSONObject jsonObject = JSONObject.parseObject(body);
-            if (jsonObject.containsKey("code") && HttpStatus.SUCCESS == jsonObject.getIntValue("code")
-                    && jsonObject.containsKey("status") && HttpStatus.SUCCESS == jsonObject.getIntValue("status")) {
-                logger.info("关闭虚拟机,接口返回成功信息:[{}]", httpResponse.body());
-                VmWare update = new VmWare();
-                update.setId(vmWare.getId());
-                update.setStatus(VmStatusEnum.Shutdown.getCode());
-                this.updateVmWare(update);
-                return RestResponse.okMessage("关机成功");
-            }
+            aliyunEcdDesktopClient.stopDesktops(Collections.singletonList(vmWare.getGuid()));
+            VmWare update = new VmWare();
+            update.setId(vmWare.getId());
+            update.setStatus(VmStatusEnum.Shutdown.getCode());
+            this.updateVmWare(update);
+            return RestResponse.okMessage("关机成功");
         } catch (Exception e) {
-            logger.error("关闭虚拟机,业务异常----------------------", e);
+            logger.error("关闭云电脑,业务异常----------------------", e);
         }
         return RestResponse.failMessage("关机失败");
     }
@@ -248,25 +240,19 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
      */
     @Override
     public RestResponse start(VmWare vmWare) {
+        if (!aliyunEcdProperties.isConfigured() || StringUtils.isEmpty(vmWare.getGuid())
+                || !VmTypeEnum.Child.getCode().equals(vmWare.getVmType())) {
+            return RestResponse.failMessage("开机失败");
+        }
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("vmName", vmWare.getVmName());
-            params.put("startPaused", "true");
-
-            HttpResponse httpResponse = HttpUtils.sendPut(vmWareApiConfig.getStart(), JSONObject.toJSONString(params));
-            String body = httpResponse.body();
-            JSONObject jsonObject = JSONObject.parseObject(body);
-            if (jsonObject.containsKey("code") && HttpStatus.SUCCESS == jsonObject.getIntValue("code")
-                    && jsonObject.containsKey("status") && HttpStatus.SUCCESS == jsonObject.getIntValue("status")) {
-                logger.info("开启虚拟机,接口返回成功信息:[{}]", httpResponse.body());
-                VmWare update = new VmWare();
-                update.setId(vmWare.getId());
-                update.setStatus(VmStatusEnum.Running.getCode());
-                this.updateVmWare(update);
-                return RestResponse.okMessage("开机成功");
-            }
+            aliyunEcdDesktopClient.startDesktops(Collections.singletonList(vmWare.getGuid()));
+            VmWare update = new VmWare();
+            update.setId(vmWare.getId());
+            update.setStatus(VmStatusEnum.Running.getCode());
+            this.updateVmWare(update);
+            return RestResponse.okMessage("开机成功");
         } catch (Exception e) {
-            logger.error("开启虚拟机,业务异常----------------------", e);
+            logger.error("开启云电脑,业务异常----------------------", e);
         }
         return RestResponse.failMessage("开机失败");
     }
@@ -279,25 +265,19 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
      */
     @Override
     public RestResponse reStart(VmWare vmWare) {
+        if (!aliyunEcdProperties.isConfigured() || StringUtils.isEmpty(vmWare.getGuid())
+                || !VmTypeEnum.Child.getCode().equals(vmWare.getVmType())) {
+            return RestResponse.failMessage("重启失败");
+        }
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("vmName", vmWare.getVmName());
-            params.put("forseRestart", "true");
-
-            HttpResponse httpResponse = HttpUtils.sendPut(vmWareApiConfig.getReStart(), JSONObject.toJSONString(params));
-            String body = httpResponse.body();
-            JSONObject jsonObject = JSONObject.parseObject(body);
-            if (jsonObject.containsKey("code") && HttpStatus.SUCCESS == jsonObject.getIntValue("code")
-                    && jsonObject.containsKey("status") && HttpStatus.SUCCESS == jsonObject.getIntValue("status")) {
-                logger.info("重启虚拟机,接口返回成功信息:[{}]", httpResponse.body());
-                VmWare update = new VmWare();
-                update.setId(vmWare.getId());
-                update.setStatus(VmStatusEnum.Restart.getCode());
-                this.updateVmWare(update);
-                return RestResponse.okMessage("重启成功");
-            }
+            aliyunEcdDesktopClient.rebootDesktops(Collections.singletonList(vmWare.getGuid()));
+            VmWare update = new VmWare();
+            update.setId(vmWare.getId());
+            update.setStatus(VmStatusEnum.Restart.getCode());
+            this.updateVmWare(update);
+            return RestResponse.okMessage("重启成功");
         } catch (Exception e) {
-            logger.error("重启虚拟机,业务异常----------------------", e);
+            logger.error("重启云电脑,业务异常----------------------", e);
         }
         return RestResponse.failMessage("重启失败");
     }
@@ -324,18 +304,7 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
 //    }
     @Override
     public RestResponse clone(VmWare query) {
-        // 获取克隆的数量
-        Integer number = query.getNumber();
-        // 判空操作
-        if (ObjectUtils.isEmpty(number)) {
-            logger.error("您填写的克隆数量为空！");
-            return RestResponse.fail(500, "您填写的克隆数量为空！");
-        }
-        // 循环number次，每次克隆一台机器
-        for (int i = 1; i <= number; i++) {
-            cloneVmWare(vmWareMapping.toVmWareVM(query));
-        }
-        return RestResponse.okMessage("克隆成功");
+        return RestResponse.failMessage("已改为学生端按需创建无影云桌面，管理端预克隆已移除。");
     }
     /**
      * 异步克隆虚拟机
@@ -423,109 +392,7 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
     @Async
     @Override
     public void cloneVmWare(VmWareVM query) {
-        try {
-            // 获取该台机器的guid 即 uuid
-            String guid = query.getGuid();
-            // 根据guid查询虚拟机(主机)
-            VmWare parentVmWare = vmWareMapper.selectParentVmWareByGuid(guid);
-            // 生成一个随机的子虚拟机guid
-            String childGuid = UUID.randomUUID().toString();
-            String nowStr = DateUtil.format(new Date(), DatePattern.PURE_DATE_PATTERN);
-            // 根据当前时间生成子虚拟机的名称
-            String childVmName = nowStr + "-" + parentVmWare.getVmName() + "-" + childGuid;
-
-            //获取配置信息,包括根配置和磁盘配置
-            String rootConfigKey = vmWareConfigKey.getRootConfigKey();
-            String diskConfigKey = vmWareConfigKey.getDiskConfigKey();
-            // 判空操作---根配置和磁盘配置
-            if (StringUtils.isNotEmpty(rootConfigKey) && StringUtils.isNotEmpty(diskConfigKey)) {
-                String rootConfig = sysConfigService.selectConfigByKey(rootConfigKey);
-                String diskConfig = sysConfigService.selectConfigByKey(diskConfigKey);
-                if (StringUtils.isNotEmpty(rootConfig) && StringUtils.isNotEmpty(diskConfig)) {
-                    // 解析配置信息并进行配置检查(虚拟机基础信息、虚拟机硬盘信息)
-                    Root root = JSONObject.parseObject(rootConfig, Root.class);
-                    Disk disk = JSONObject.parseObject(diskConfig, Disk.class);
-                    // 检验虚拟机基础信息、虚拟机硬盘信息
-                    boolean checked = checkVmConfig(root, disk);
-                    if (checked) {
-                        //封装请求参数，包括子虚拟机名称、数据源、磁盘
-                        root.setName(childVmName);
-                        root.setDataSource(parentVmWare.getDiskName());
-                        disk.setName(childVmName);
-                        List<Disk> diskList = new ArrayList<>();
-                        diskList.add(disk);
-                        root.setDisk(diskList);
-                        logger.info("异步克隆虚拟机,开始----------------------");
-                        // 发送克隆请求
-                        HttpResponse httpResponse = HttpUtils.sendPost(vmWareApiConfig.getClone(), JSONObject.toJSONString(root));
-                        // 判断返回结果
-                        if (httpResponse.isOk()) {
-                            String body = httpResponse.body();
-                            JSONObject jsonObject = JSONObject.parseObject(body);
-                            // 判断请求是否成功
-                            if (jsonObject.containsKey("code") && HttpStatus.SUCCESS == jsonObject.getIntValue("code")
-                                    && jsonObject.containsKey("status") && HttpStatus.SUCCESS == jsonObject.getIntValue("status")) {
-                                logger.info("异步克隆虚拟机,接口返回成功信息:[{}]", httpResponse.body());
-                                //克隆成功保存虚拟化
-                                VmWareClone vmWareClone = vmWareMapping.toVmWareClone(parentVmWare);
-                                VmWare insert = vmWareMapping.toVmWare(vmWareClone);
-                                insert.setVmType(VmTypeEnum.Child.getCode());
-                                insert.setGuid(childGuid);
-                                insert.setVmParentId(guid);
-                                insert.setVmName(childVmName);
-                                insert.setVmCpu(root.getCpu());
-                                insert.setVmStorage(root.getMem());
-                                insert.setDiskName(disk.getName());
-                                insert.setDiskSize(disk.getSize());
-                                insert.setStatus(VmStatusEnum.Init.getCode());
-                                insert.setClasses(query.getClasses());
-                                insert.setCreateTime(new Date());
-                                insert.setDisabled(false);
-                                insert.setExamPaperId(query.getExamPaperId());
-                                insert.setDeleted(false);
-                                //保存
-                                vmWareMapper.insertVmWare(insert);
-                            } else {
-                                logger.error("异步克隆虚拟机,接口返回失败信息:[{}]", httpResponse.body());
-                            }
-                        } else {
-                            logger.error("异步克隆虚拟机,接口请求失败:[{}]", httpResponse.body());
-                        }
-                    }
-                } else {
-                    logger.error("异步克隆虚拟机,获取虚拟机配置信息失败");
-                }
-            } else {
-                logger.error("异步克隆虚拟机,获取虚拟机配置键名失败");
-            }
-        } catch (Exception e) {
-            logger.error("异步克隆虚拟机,业务异常----------------------", e);
-        }
-    }
-    /**
-     * 校验请求参数
-     *
-     * @param root 虚拟机基础信息
-     * @param disk 虚拟机硬盘信息
-     * @return 是否通过
-     */
-    private boolean checkVmConfig(Root root, Disk disk) {
-        if (ObjectUtils.isNotEmpty(root) && ObjectUtils.isNotEmpty(disk)) {
-            if (StringUtils.isNotEmpty(root.getOsType()) && ObjectUtils.isNotEmpty(root.getCpu())
-                    && StringUtils.isNotEmpty(root.getMem())) {
-                if (ObjectUtils.isNotEmpty(disk.getBoot_order()) && StringUtils.isNotEmpty(disk.getType())
-                        && StringUtils.isNotEmpty(disk.getBus()) && StringUtils.isNotEmpty(disk.getSize())
-                        && StringUtils.isNotEmpty(disk.getMountType()) && StringUtils.isNotEmpty(disk.getStorageclassName())
-                        && StringUtils.isNotEmpty(disk.getAccessMode())) {
-                    return true;
-                } else {
-                    logger.error("异步克隆新虚拟机,虚拟机硬盘信息不全");
-                }
-            } else {
-                logger.error("异步克隆新虚拟机,虚拟机基础信息不全");
-            }
-        }
-        return false;
+        logger.warn("cloneVmWare 已废弃：云桌面改为按需创建");
     }
 
     /**
@@ -537,7 +404,6 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
     @Override
     public void releaseVmWare(VmWare vmWare) {
         try {
-            //设置删除状态
             vmWare.setVmUserId("");
             vmWare.setClasses("");
             vmWare.setValidCreateTime(null);
@@ -545,34 +411,13 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
             vmWare.setDisabled(true);
             vmWare.setDeleted(true);
             this.updateVmWare(vmWare);
-
-            //封装请求参数
-            VmWareDelete vmWareDelete = new VmWareDelete();
-            vmWareDelete.setVmName(vmWare.getVmName());
-            List<String> volumes = new ArrayList<>();
-            volumes.add(vmWare.getVmStorage());
-            vmWareDelete.setVolumes(volumes);
-
-            //调用接口
-            HttpResponse httpResponse = HttpUtils.sendDelete(vmWareApiConfig.getDelete(), JSONObject.toJSONString(vmWareDelete));
-            if (httpResponse.isOk()) {
-                String body = httpResponse.body();
-                JSONObject jsonObject = JSONObject.parseObject(body);
-                if (jsonObject.containsKey("code") && HttpStatus.SUCCESS == jsonObject.getIntValue("code")) {
-                    logger.info("异步删除虚拟机,接口返回成功信息:[{}]", httpResponse.body());
-                    int count = vmWareMapper.deleteVmWareById(vmWare.getId());
-                    if (count > 0) {
-                        logger.info("异步删除虚拟机,删除虚拟机成功");
-                    }
-                } else {
-                    logger.error("异步删除虚拟机,接口返回失败信息:[{}]", httpResponse.body());
-                }
-            } else {
-                logger.error("异步删除虚拟机,接口请求失败:[{}]", httpResponse.body());
+            if (aliyunEcdProperties.isConfigured() && VmTypeEnum.Child.getCode().equals(vmWare.getVmType())
+                    && StringUtils.isNotEmpty(vmWare.getGuid())) {
+                aliyunEcdDesktopClient.deleteDesktops(Collections.singletonList(vmWare.getGuid()));
             }
+            vmWareMapper.deleteVmWareById(vmWare.getId());
         } catch (Exception e) {
-            logger.error("异步删除虚拟机,业务异常----------------------", e);
-            e.printStackTrace();
+            logger.error("释放云电脑,业务异常----------------------", e);
         }
     }
 

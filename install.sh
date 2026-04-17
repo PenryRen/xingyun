@@ -3,6 +3,8 @@
 # nginx（--with-nginx）：将 deploy/linux/nginx-linhang.conf.in 中 @@INSTALL_ROOT@@ 替换为 INSTALL_PREFIX，
 # 前端静态根为 INSTALL_PREFIX/web/{ueit-user-web,ueit-admin}，上传为 INSTALL_PREFIX/resource/web-file。
 # 默认交互式询问；自动化请加 -y / --non-interactive 并配合环境变量。
+# 一键（非交互 + 默认自动安装编译/运行所需系统依赖）也可用仓库根目录:
+#   sudo ./one-click-deploy.sh [--init-db] [--with-nginx] 等，参数与本脚本相同。
 # 用法：
 #   sudo ./install.sh
 #   sudo INSTALL_PREFIX=/srv/linhang INIT_DB=1 ./install.sh -y
@@ -765,8 +767,10 @@ init_database() {
     echo "==> 创建/授权应用账号 ${app_user}"
     mysql "${args[@]}" -e "
 CREATE USER IF NOT EXISTS '${app_user}'@'%' IDENTIFIED BY '${app_pass}';
+CREATE USER IF NOT EXISTS '${app_user}'@'localhost' IDENTIFIED BY '${app_pass}';
 CREATE USER IF NOT EXISTS '${app_user}'@'127.0.0.1' IDENTIFIED BY '${app_pass}';
 GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${app_user}'@'%';
+GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${app_user}'@'localhost';
 GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${app_user}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 "

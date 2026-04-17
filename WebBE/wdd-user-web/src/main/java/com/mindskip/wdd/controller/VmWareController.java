@@ -2,11 +2,8 @@ package com.mindskip.wdd.controller;
 
 import com.mindskip.wdd.base.BaseApiController;
 import com.mindskip.wdd.base.RestResponse;
-import com.mindskip.wdd.domain.ueit.SshParam;
-import com.mindskip.wdd.domain.ueit.SshResult;
 import com.mindskip.wdd.domain.ueit.TrainItemUserQuestion;
 import com.mindskip.wdd.service.AsyncService;
-import com.mindskip.wdd.service.SshService;
 import com.mindskip.wdd.service.VmWareService;
 import com.mindskip.wdd.viewmodel.ueit.VmWareVM;
 import lombok.AllArgsConstructor;
@@ -31,8 +28,6 @@ public class VmWareController extends BaseApiController {
     private static final Logger logger = LoggerFactory.getLogger(VmWareController.class);
 
     private final VmWareService vmWareService;
-
-    private final SshService sshService;
 
     private final AsyncService asyncService;
 
@@ -103,10 +98,5 @@ public class VmWareController extends BaseApiController {
     @PostMapping("/renewal")
     public RestResponse renewal(@RequestBody VmWareVM query) {
         return vmWareService.renewal(getCurrentUser(), query);
-    }
-
-    @PostMapping("/ssh")
-    public SshResult ssh(@RequestBody SshParam sshParam) {
-        return sshService.executeCommand(sshParam);
     }
 }

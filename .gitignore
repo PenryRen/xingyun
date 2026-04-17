@@ -6,12 +6,27 @@
 ### VsCode ###
 .vscode
 
-### WebFE 构建产物 ###
-WebFE/target/
-WebFE/*.tar.gz
+### 构建与打包产物 ###
+**/target/
+WebFE/wdd-admin/dist/
+WebFE/wdd-user-web/dist/
+*.tar.gz
+*.tgz
 WebBE/*.tar
+WebFE/*.tar
 
-### WebBE 构建产物 ###
-WebBE/target/
-WebBE/*.tar.gz
-WebBE/*.tar
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+### 系统与日志 ###
+.DS_Store
+Thumbs.db
+*.log

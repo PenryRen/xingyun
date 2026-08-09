@@ -40,6 +40,8 @@ pydantic==2.12.3
 pydantic_core==2.41.4
 requests==2.32.5
 httpx==0.28.1
+chardet==5.2.0
+python-pptx==1.0.2
 python-dotenv==1.2.1
 PyYAML==6.0.3
 

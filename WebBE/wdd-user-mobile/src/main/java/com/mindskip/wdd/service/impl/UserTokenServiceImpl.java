@@ -10,7 +10,7 @@ import com.mindskip.wdd.repository.UserTokenMapper;
 import com.mindskip.wdd.service.SystemService;
 import com.mindskip.wdd.service.UserTokenService;
 import com.mindskip.wdd.utility.DateTimeUtil;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -29,7 +29,7 @@ import java.util.UUID;
  * @date 2024/8/25 10:45
  */
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class UserTokenServiceImpl extends ServiceImpl<UserTokenMapper, UserToken> implements UserTokenService {
 
     private final static String CACHE_NAME = "ueit:token";

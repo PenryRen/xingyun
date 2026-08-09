@@ -1,15 +1,20 @@
 import argparse
 import asyncio
 import json
+import os
 import threading
 import traceback
 import logging
 from typing import Any, Dict, Iterable, AsyncIterable, AsyncGenerator, Optional
+from urllib.parse import urljoin
 import cozeloop
+import httpx
 import uvicorn
 import time
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
+from openai import APIConnectionError, AuthenticationError, NotFoundError, RateLimitError
+from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
@@ -18,6 +23,7 @@ from coze_coding_utils.helper import graph_helper
 from coze_coding_utils.log.node_log import LOG_FILE
 from coze_coding_utils.log.write_log import setup_logging, request_context
 from coze_coding_utils.log.config import LOG_LEVEL
+from utils.direct_dns import start_model_host_refresher
 from coze_coding_utils.error.classifier import ErrorClassifier, classify_error
 from coze_coding_utils.helper.stream_runner import AgentStreamRunner, WorkflowStreamRunner,agent_stream_handler,workflow_stream_handler, RunOpt
 
@@ -235,9 +241,91 @@ class GraphService:
 
 service = GraphService()
 app = FastAPI()
+start_model_host_refresher()
+
+_model_probe_cache: Dict[str, Any] = {
+    "checked_at": 0.0,
+    "available": False,
+    "code": "NOT_CHECKED",
+    "message": "尚未检测模型连接",
+}
+_model_probe_lock = asyncio.Lock()
+
+
+def _model_configured() -> bool:
+    return bool(
+        os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY")
+        and os.getenv("COZE_INTEGRATION_MODEL_BASE_URL")
+    )
+
+
+def _configured_model_name() -> str:
+    workspace_path = os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects")
+    config_path = os.path.join(workspace_path, "config", "teaching_assistant_config.json")
+    try:
+        with open(config_path, "r", encoding="utf-8") as config_file:
+            return str(json.load(config_file).get("config", {}).get("model") or "").strip()
+    except Exception:
+        return ""
+
+
+def _cache_model_probe(available: bool, code: str, message: str) -> Dict[str, Any]:
+    _model_probe_cache.update({
+        "checked_at": time.monotonic(),
+        "available": available,
+        "code": code,
+        "message": message,
+    })
+    return dict(_model_probe_cache)
+
+
+async def _probe_model_availability(force: bool = False) -> Dict[str, Any]:
+    if not _model_configured():
+        return _cache_model_probe(False, "MODEL_NOT_CONFIGURED", "模型 API 尚未配置")
+    if not force and time.monotonic() - float(_model_probe_cache["checked_at"]) < 30:
+        return dict(_model_probe_cache)
+
+    async with _model_probe_lock:
+        if not force and time.monotonic() - float(_model_probe_cache["checked_at"]) < 30:
+            return dict(_model_probe_cache)
+        base_url = str(os.getenv("COZE_INTEGRATION_MODEL_BASE_URL") or "").rstrip("/") + "/"
+        models_url = urljoin(base_url, "models")
+        expected_model = _configured_model_name()
+        headers = {"Authorization": f"Bearer {os.getenv('COZE_WORKLOAD_IDENTITY_API_KEY')}"}
+        try:
+            async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
+                response = await client.get(models_url, headers=headers)
+            if response.status_code in {401, 403}:
+                return _cache_model_probe(False, "MODEL_AUTHENTICATION_FAILED", "模型鉴权失败，请检查本地 API 配置")
+            response.raise_for_status()
+            payload = response.json()
+            model_ids = {str(item.get("id")) for item in payload.get("data", []) if isinstance(item, dict)}
+            if expected_model and expected_model not in model_ids:
+                return _cache_model_probe(False, "MODEL_NOT_FOUND", "已配置的模型不可用，请检查模型名称")
+            return _cache_model_probe(True, "OK", "模型调用可用")
+        except httpx.RequestError:
+            return _cache_model_probe(False, "MODEL_NETWORK_UNAVAILABLE", "Agent 在线，但模型网络不可用，请检查本地网络代理后重试")
+        except (ValueError, httpx.HTTPStatusError):
+            return _cache_model_probe(False, "MODEL_PROBE_FAILED", "模型连接检测失败，请稍后重试")
 
 # OpenAI 兼容接口处理器
 openai_handler = OpenAIChatHandler(service)
+
+
+async def _invoke_education_agent(message: str, session_id: str, headers, method: str) -> str:
+    """直接调用教育 Agent，避免旧运行时对 agent/graph 项目类型的误判。"""
+    ctx = new_context(method=method, headers=headers)
+    request_context.set(ctx)
+    agent = graph_helper.get_agent_instance("agents.agent", ctx)
+    run_config = init_agent_config(agent, ctx)
+    run_config["configurable"] = {"thread_id": session_id}
+    result = await agent.ainvoke(
+        {"messages": [HumanMessage(content=message)]},
+        config=run_config,
+        context=ctx,
+    )
+    messages = result.get("messages", []) if isinstance(result, dict) else []
+    return messages[-1].content if messages else "处理完成"
 
 
 @app.post("/run")
@@ -439,15 +527,29 @@ async def http_node_run(node_id: str, request: Request):
 
 @app.post("/v1/chat/completions")
 async def openai_chat_completions(request: Request):
-    """OpenAI Chat Completions API 兼容接口"""
-    ctx = new_context(method="openai_chat", headers=request.headers)
-    request_context.set(ctx)
-
-    logger.info(f"Received request for /v1/chat/completions: run_id={ctx.run_id}")
-
+    """OpenAI Chat Completions 兼容接口（当前仅支持非流式文本消息）。"""
     try:
         payload = await request.json()
-        return await openai_handler.handle(payload, ctx)
+        if payload.get("stream"):
+            raise HTTPException(status_code=400, detail="stream=true is not supported by this endpoint")
+        messages = payload.get("messages") or []
+        user_messages = [item for item in messages if item.get("role") == "user"]
+        if not user_messages:
+            raise HTTPException(status_code=400, detail="a user message is required")
+        raw_content = user_messages[-1].get("content", "")
+        if isinstance(raw_content, list):
+            message = "\n".join(str(item.get("text", "")) for item in raw_content if item.get("type") == "text")
+        else:
+            message = str(raw_content)
+        session_id = str(payload.get("session_id") or f"openai-{int(time.time())}")
+        content = await _invoke_education_agent(message, session_id, request.headers, "openai_chat")
+        return {
+            "id": f"chatcmpl-{int(time.time() * 1000)}",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": payload.get("model") or "xingyun-education-agent",
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": content}, "finish_reason": "stop"}],
+        }
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error in openai_chat_completions: {e}")
         raise HTTPException(status_code=400, detail="Invalid JSON format")
@@ -455,16 +557,106 @@ async def openai_chat_completions(request: Request):
         cozeloop.flush()
 
 
-@app.get("/health")
-async def health_check():
+@app.get("/api/v1/agents")
+async def list_education_agents():
+    """返回前端可视化所使用的教育智能体能力清单。"""
+    return {
+        "success": True,
+        "agents": [
+            {"type": "exam_analysis", "name": "考试分析", "capabilities": ["成绩趋势", "错题统计", "薄弱项定位"]},
+            {"type": "learning_profile", "name": "学情画像", "capabilities": ["学习进度", "能力维度", "行动建议"]},
+            {"type": "learning_assessment", "name": "智能组卷", "capabilities": ["强化练习", "难度适配", "针对性训练"]},
+            {"type": "teaching_assistant", "name": "办学助手", "capabilities": ["概念解释", "学习答疑", "实践指导"]},
+        ],
+    }
+
+
+@app.post("/api/v1/chat")
+async def education_chat(request: Request):
+    """供星云学生端调用的简洁聊天接口，绕过旧版 OpenAI handler 的项目类型误判。"""
+    body = await request.json()
+    message = str(body.get("message") or "").strip()
+    session_id = str(body.get("session_id") or "default")
+    if not message:
+        raise HTTPException(status_code=400, detail="message is required")
+
     try:
-        # 这里可以添加更多的健康检查逻辑
+        content = await _invoke_education_agent(message, session_id, request.headers, "education_chat")
+        _cache_model_probe(True, "OK", "模型调用可用")
+        return {"success": True, "message": content, "session_id": session_id}
+    except APIConnectionError:
+        _cache_model_probe(False, "MODEL_NETWORK_UNAVAILABLE", "Agent 在线，但模型网络不可用，请检查本地网络代理后重试")
+        logger.warning("Education chat failed: MODEL_NETWORK_UNAVAILABLE", exc_info=True)
+        raise HTTPException(status_code=503, detail={
+            "code": "MODEL_NETWORK_UNAVAILABLE",
+            "message": "Agent 在线，但模型网络不可用，请检查本地网络代理后重试",
+        })
+    except AuthenticationError:
+        _cache_model_probe(False, "MODEL_AUTHENTICATION_FAILED", "模型鉴权失败，请检查本地 API 配置")
+        logger.warning("Education chat failed: MODEL_AUTHENTICATION_FAILED")
+        raise HTTPException(status_code=401, detail={
+            "code": "MODEL_AUTHENTICATION_FAILED",
+            "message": "模型鉴权失败，请检查本地 API 配置",
+        })
+    except RateLimitError:
+        logger.warning("Education chat failed: MODEL_RATE_LIMITED")
+        raise HTTPException(status_code=429, detail={
+            "code": "MODEL_RATE_LIMITED",
+            "message": "模型请求过于频繁，请稍后重试",
+        })
+    except NotFoundError:
+        _cache_model_probe(False, "MODEL_NOT_FOUND", "已配置的模型不可用，请检查模型名称")
+        logger.warning("Education chat failed: MODEL_NOT_FOUND")
+        raise HTTPException(status_code=502, detail={
+            "code": "MODEL_NOT_FOUND",
+            "message": "已配置的模型不可用，请检查模型名称",
+        })
+    except Exception:
+        logger.error("Education chat failed: MODEL_CALL_FAILED", exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "code": "MODEL_CALL_FAILED",
+            "message": "模型调用失败，请稍后重试",
+        })
+    finally:
+        cozeloop.flush()
+
+
+@app.get("/health")
+async def health_check(force: bool = False):
+    try:
+        model_configured = _model_configured()
+        probe = await _probe_model_availability(force=force)
+        data_source_ready = bool(
+            os.getenv("COZE_SUPABASE_URL")
+            and os.getenv("COZE_SUPABASE_ANON_KEY")
+        )
         return {
-            "status": "ok",
-            "message": "Service is running",
+            "status": "ok" if probe["available"] else "degraded",
+            "message": "Agent 服务已启动，模型调用可用" if probe["available"] else "Agent 服务已启动，但模型调用不可用",
+            "service_ready": True,
+            "model_configured": model_configured,
+            "model_available": bool(probe["available"]),
+            "model_ready": bool(probe["available"]),
+            "model_probe_code": probe["code"],
+            "model_message": probe["message"],
+            "data_source_ready": data_source_ready,
         }
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=str(e))
+    except Exception:
+        logger.error("Health model probe failed", exc_info=True)
+        raise HTTPException(status_code=503, detail={"code": "MODEL_PROBE_FAILED", "message": "模型连接检测失败"})
+
+
+@app.get("/live")
+async def liveness_check():
+    return {"status": "ok", "service_ready": True}
+
+
+@app.get("/ready")
+async def readiness_check():
+    probe = await _probe_model_availability(force=False)
+    if not probe["available"]:
+        raise HTTPException(status_code=503, detail={"code": probe["code"], "message": probe["message"]})
+    return {"status": "ok", "model_ready": True, "model_available": True}
 
 
 @app.get(path="/graph_parameter")

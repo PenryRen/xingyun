@@ -4,6 +4,8 @@ import useUserStore from '@/store/modules/user';
 import Cookies from 'js-cookie';
 import {localStorage} from '@/utils/storage';
 
+const isLocalDevelopment = import.meta.env.VITE_APP_LOCAL_DEVELOPMENT === 'true';
+
 const post = function (url, params) {
     const query = {
         url: url,
@@ -40,6 +42,9 @@ const postSync = async function (url: any, params: any) {
         });
         return Promise.reject(e.message);
     });
+    if (res.data.code === 451) {
+        return Promise.reject(res.data);
+    }
     return res.data;
 };
 
@@ -131,13 +136,20 @@ const request = function (loading, query) {
     }
     return axios.request(query)
         .then(res => {
-            useUserStore().removeExpiration();
+            if (!isLocalDevelopment) {
+                useUserStore().removeExpiration();
+            }
             if (res.data.code === 400 || res.data.code === 401) {
                 useUserStore().removeLoginCookies();
                 localStorage.clear();
                 window.location.href = '/';
             } else if (res.data.code === 403) {
+                if (isLocalDevelopment) {
+                    return Promise.reject(res.data);
+                }
                 useUserStore().setExpiration("true",res.data.message);
+            } else if (res.data.code === 451) {
+                return Promise.reject(res.data);
             } else if (res.data.code === 500) {
                 return Promise.reject(res.data);
             } else if (res.data.code === 501) {

@@ -49,6 +49,10 @@ server:
   error:
     path: /error
 
+token:
+  # Whether one account may stay signed in on multiple devices.
+  soloLogin: true
+
 #logging logback
 logging:
   config: classpath:logback-spring.xml

@@ -46,10 +46,14 @@ const useUserStore = defineStore({
         setExpiration(flag: string, msg: string) {
           Cookies.set(key.expirationKey, flag);
           Cookies.set(key.errMsgKey, msg);
+          this.expiration = flag === 'true';
+          this.errMsg = msg;
         },
         removeExpiration(){
           Cookies.remove(key.expirationKey);
           Cookies.remove(key.errMsgKey);
+          this.expiration = false;
+          this.errMsg = '';
         },
         logout() {
             return new Promise((resolve, reject) => {

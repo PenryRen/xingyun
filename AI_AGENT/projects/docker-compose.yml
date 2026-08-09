@@ -1,22 +1,24 @@
-version: '3.8'
+name: xingyun-agent-standalone
 
 services:
   agent:
     build: .
     container_name: kylin-education-agent
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8001:8000"
     environment:
       # Supabase 配置（需要替换为你的实际值）
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
+      - COZE_SUPABASE_URL=${COZE_SUPABASE_URL:-}
+      - COZE_SUPABASE_ANON_KEY=${COZE_SUPABASE_ANON_KEY:-}
 
       # 豆包大模型配置（需要替换为你的实际值）
-      - COZE_WORKLOAD_IDENTITY_API_KEY=${COZE_WORKLOAD_IDENTITY_API_KEY}
-      - COZE_INTEGRATION_MODEL_BASE_URL=${COZE_INTEGRATION_MODEL_BASE_URL}
+      - COZE_WORKLOAD_IDENTITY_API_KEY=${COZE_WORKLOAD_IDENTITY_API_KEY:-}
+      - COZE_INTEGRATION_MODEL_BASE_URL=${COZE_INTEGRATION_MODEL_BASE_URL:-}
 
       # 工作目录
       - COZE_WORKSPACE_PATH=/app
+      - COZE_DIRECT_DOH_ENABLED=true
+      - COZE_DOH_REFRESH_SECONDS=300
 
     volumes:
       # 挂载项目目录，方便开发时实时更新
@@ -26,7 +28,7 @@ services:
     restart: unless-stopped
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/live', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3

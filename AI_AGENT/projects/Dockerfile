@@ -25,4 +25,5 @@ ENV PYTHONUNBUFFERED=1
 ENV COZE_WORKSPACE_PATH=/app
 
 # 启动服务
-CMD ["python", "src/main.py", "-m", "http", "-p", "8000"]
+WORKDIR /app/src
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

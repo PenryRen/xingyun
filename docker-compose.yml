@@ -1,9 +1,11 @@
+name: xingyun
+
 services:
   mysql:
     image: mysql:8.4.0
     container_name: mysql
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: wdd
@@ -23,7 +25,7 @@ services:
     image: redis:7.4-alpine
     container_name: redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     environment:
       TZ: Asia/Shanghai
     volumes:
@@ -38,9 +40,11 @@ services:
     build:
       context: ./WebFE/wdd-admin  # Dockerfile 所在目录
       dockerfile: Dockerfile
+      args:
+        VITE_APP_LOCAL_DEVELOPMENT: "true"
     image: xingyun/wdd-admin:latest
     ports:
-      - "5002:5002"
+      - "127.0.0.1:5002:5002"
     restart: unless-stopped
     depends_on:
       - backend
@@ -49,12 +53,37 @@ services:
     build:
       context: ./WebFE/wdd-user-web
       dockerfile: Dockerfile
+      args:
+        VITE_APP_LOCAL_DEVELOPMENT: "true"
     image: xingyun/wdd-user-web:latest
     ports:
-      - "5001:5001"
+      - "127.0.0.1:5001:5001"
     restart: unless-stopped
     depends_on:
       - backend
+
+  agent:
+    build:
+      context: ./AI_AGENT/projects
+      dockerfile: Dockerfile
+    image: xingyun/agent:latest
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      COZE_WORKLOAD_IDENTITY_API_KEY: ${COZE_WORKLOAD_IDENTITY_API_KEY:-}
+      COZE_INTEGRATION_MODEL_BASE_URL: ${COZE_INTEGRATION_MODEL_BASE_URL:-}
+      COZE_SUPABASE_URL: ${COZE_SUPABASE_URL:-}
+      COZE_SUPABASE_ANON_KEY: ${COZE_SUPABASE_ANON_KEY:-}
+      COZE_WORKSPACE_PATH: /app
+      COZE_DIRECT_DOH_ENABLED: "true"
+      COZE_DOH_REFRESH_SECONDS: "300"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/live', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   backend:
     build:
@@ -62,8 +91,8 @@ services:
       dockerfile: Dockerfile
     image: xingyun/backend:latest
     ports:
-      - "16000:16000"
-      - "16002:16002"
+      - "127.0.0.1:16000:16000"
+      - "127.0.0.1:16002:16002"
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/wdd?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true
@@ -73,6 +102,7 @@ services:
       SPRING_REDIS_PORT: 6379
       SPRING_REDIS_PASSWORD: redis123
       SPRING_REDIS_DATABASE: 1
+      SYSTEM_LOCAL_DEVELOPMENT: "true"
     restart: unless-stopped
     depends_on:
       - mysql
@@ -81,16 +111,17 @@ services:
   nginx:
     build:
       context: ./Nginx
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     image: xingyun/nginx:latest
     ports:
-      - "6001:6001"
-      - "6003:6003"
+      - "127.0.0.1:6001:6001"
+      - "127.0.0.1:6003:6003"
     restart: unless-stopped
     depends_on:
       - user
       - admin
       - backend
+      - agent
 
 volumes:
   mysql-data:

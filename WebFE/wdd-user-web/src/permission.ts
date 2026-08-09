@@ -3,6 +3,7 @@ import useStore from '@/store';
 
 // 白名单路由
 const whiteList = ['/login', '/register', "/403"];
+const isLocalDevelopment = import.meta.env.VITE_APP_LOCAL_DEVELOPMENT === 'true';
 
 router.beforeEach(async (to, from, next) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -16,12 +17,10 @@ router.beforeEach(async (to, from, next) => {
     const {user} = useStore();
     // 校验授权过期
     const expiration = user.expiration;
-    if (expiration) {
-      if (to.path === '/403') {
-        next();
-      } else {
-        next({path: '/403'});
-      }
+    if (isLocalDevelopment) {
+      user.removeExpiration();
+    } else if (expiration) {
+      return to.path === '/403' ? next() : next({path: '/403'});
     }
     const hasToken = user.token;
     if (hasToken) {

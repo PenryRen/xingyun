@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -30,6 +31,9 @@ public class AuthHandlerInterceptor implements HandlerInterceptor {
     private final SysConfigService sysConfigService;
     private final SystemService systemService;
     private final VmWareConfigKey vmWareConfigKey;
+
+    @Value("${system.local-development:false}")
+    private boolean localDevelopment;
 
     /**
      * Instantiates a new Token handler interceptor.
@@ -54,6 +58,14 @@ public class AuthHandlerInterceptor implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        if (localDevelopment) {
+            if (request.getRequestURI().startsWith("/api/vmWare")) {
+                RestUtil.response(response, SystemCode.LocalDevelopmentRestricted);
+                return false;
+            }
+            return true;
+        }
+
         try {
             String expirationConfigKey = vmWareConfigKey.getExpirationConfigKey();
             if (StringUtils.isEmpty(expirationConfigKey)) {

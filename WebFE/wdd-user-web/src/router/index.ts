@@ -135,6 +135,18 @@ export const constantRoutes: Array<RouteRecordRaw> = [
         ]
     },
     {
+        path: '/ai',
+        component: Layout,
+        children: [
+            {
+                path: 'index',
+                name: 'AiLearningCenter',
+                component: () => import('@/views/ai/workspace.vue'),
+                meta: {title: 'AI 学习中心'}
+            }
+        ]
+    },
+    {
         path: '/course/ware',
         component: Layout,
         children: [

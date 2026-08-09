@@ -9,6 +9,9 @@ RUN npm install
 
 COPY . .
 
+ARG VITE_APP_LOCAL_DEVELOPMENT=false
+ENV VITE_APP_LOCAL_DEVELOPMENT=${VITE_APP_LOCAL_DEVELOPMENT}
+
 RUN npm run build
 
 # ===== Stage 2: Runtime =====

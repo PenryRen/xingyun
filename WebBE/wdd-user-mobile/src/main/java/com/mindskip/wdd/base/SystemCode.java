@@ -28,6 +28,10 @@ public enum SystemCode {
      */
     AuthExpiration(403, "系统授权过期，请联系管理员"),
     /**
+     * LocalDevelopmentRestricted
+     */
+    LocalDevelopmentRestricted(451, "本地开发模式已禁用供应商虚拟机功能"),
+    /**
      * InnerError
      */
     InnerError(500, "系统内部错误"),

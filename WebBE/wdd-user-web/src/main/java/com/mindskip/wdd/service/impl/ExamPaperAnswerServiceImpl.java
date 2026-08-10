@@ -80,6 +80,16 @@ public class ExamPaperAnswerServiceImpl extends ServiceImpl<ExamPaperAnswerMappe
                 examPaperAnswerMapper.page(requestVM));
     }
 
+    @Override
+    public List<ExamPaperAnswer> getLearningRecords(Integer userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId must not be null");
+        }
+        ExamPaperAnswer filter = new ExamPaperAnswer();
+        filter.setCreateUser(userId);
+        return examPaperAnswerMapper.selectExamPaperAnswerList(filter);
+    }
+
 
     @Override
     public ExamPaperAnswerEditResponseVM toExamPaperAnswerEditResponseVM(ExamPaperCache examPaperCache, ExamPaperAnswer examPaperAnswer) {

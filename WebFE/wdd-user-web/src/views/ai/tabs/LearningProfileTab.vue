@@ -34,14 +34,14 @@
           <el-icon><Document/></el-icon>
           <strong>暂无知识点级数据</strong>
           <p>完成题目标签接入后，可生成掌握点与薄弱点。</p>
-          <button type="button" @click="$emit('ask-profile')">了解当前考试证据</button>
+          <button type="button" @click="$emit('ask-profile')">让 AI 结合档案给建议</button>
         </div>
       </section>
     </div>
 
     <footer class="profile-footer">
       <div><span>档案仅来自正式考试记录</span><i></i><span>真实 0 分保留，缺失分数不进入趋势</span></div>
-      <el-button @click="$emit('ask-profile')">向 AI 询问这份档案</el-button>
+      <el-button @click="$emit('ask-profile')">让 AI 结合档案制定计划</el-button>
     </footer>
   </section>
 </template>
@@ -60,11 +60,9 @@ defineProps<{
 defineEmits<{(event: 'ask-profile'): void}>();
 
 const scoreOf = (record: ExamRecord) => {
-  const total = Number(record.paperScore);
-  const score = Number(record.userScore);
-  return Number.isFinite(total) && Number.isFinite(score) && total > 0 && score >= 0 && score <= total
-    ? Math.round(score / total * 100)
-    : '--';
+  if (record.scoreRatePercent === null || record.scoreRatePercent === undefined) return '--';
+  const score = Number(record.scoreRatePercent);
+  return Number.isFinite(score) ? Math.round(score) : '--';
 };
 const formatDateTime = (value?: string) => value ? value.slice(0, 16) : '--';
 </script>

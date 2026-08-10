@@ -8,13 +8,6 @@ langgraph-checkpoint-postgres==3.0.1
 langgraph-prebuilt==1.0.2
 langgraph-sdk==0.2.9
 
-# Supabase 客户端
-supabase==2.27.3
-postgrest==2.27.3
-realtime==2.27.3
-supabase-auth==2.27.3
-supabase-functions==2.27.3
-
 # Coze SDK
 coze-coding-dev-sdk==0.5.9
 coze-coding-utils==0.2.4

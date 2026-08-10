@@ -10,6 +10,7 @@ export interface AgentHealth {
     model_probe_code?: string;
     model_message?: string;
     data_source_ready?: boolean;
+    data_source_mode?: string;
 }
 
 export interface AgentReply {
@@ -26,12 +27,22 @@ export async function getAgentHealth(force = false): Promise<AgentHealth> {
     return response.data;
 }
 
-export async function askAgent(message: string, sessionId: string): Promise<AgentReply> {
-    const response = await axios.post(`${BASE_URL}/api/v1/chat`, {
-        session_id: sessionId,
-        message
-    }, {timeout: 120000});
+export async function askAgent(message: string): Promise<AgentReply> {
+    const response = await axios.post('/api/ai/learning/assistant', {message}, {
+        timeout: 130000,
+        withCredentials: true
+    });
 
-    const content = response.data?.message;
-    return {content: typeof content === 'string' ? content : '智能体已完成处理，但没有返回文本。'};
+    const content = response.data?.response?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+        throw new Error(response.data?.message || 'AI 助教未返回有效内容。');
+    }
+    return {content};
+}
+
+export async function resetAgentSession(): Promise<void> {
+    await axios.post('/api/ai/learning/assistant/session/reset', undefined, {
+        timeout: 15000,
+        withCredentials: true
+    });
 }

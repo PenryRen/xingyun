@@ -23,11 +23,10 @@ import type {ExamRecord} from '../types';
 
 const props = defineProps<{ records: ExamRecord[] }>();
 
-const scoreOf = (record: ExamRecord) => {
-  const total = Number(record.paperScore);
-  const score = Number(record.userScore);
-  if (!Number.isFinite(total) || !Number.isFinite(score) || total <= 0 || score < 0 || score > total) return 0;
-  return Math.round(score / total * 100);
+const scoreOf = (record: ExamRecord): number | null => {
+  if (record.scoreRatePercent === null || record.scoreRatePercent === undefined) return null;
+  const score = Number(record.scoreRatePercent);
+  return Number.isFinite(score) ? Math.round(score) : null;
 };
 
 const shortDate = (value?: string) => {
@@ -39,8 +38,11 @@ const shortDate = (value?: string) => {
 };
 
 const ticks = [0, 25, 50, 75, 100].map(value => ({value, y: 190 - value * 1.55}));
-const points = computed(() => props.records.map((record, index, list) => {
-  const score = scoreOf(record);
+const points = computed(() => props.records
+  .map(record => ({record, score: scoreOf(record)}))
+  .filter((item): item is {record: ExamRecord; score: number} => item.score !== null)
+  .map((item, index, list) => {
+  const {record, score} = item;
   return {
     id: record.id,
     score,

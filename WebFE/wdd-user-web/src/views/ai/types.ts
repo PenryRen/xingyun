@@ -3,13 +3,11 @@ export type AiTabName = 'overview' | 'exam-analysis' | 'profile' | 'assistant';
 export interface ExamRecord {
   id: number;
   paperName?: string;
-  paperScore?: number | string | null;
-  userScore?: number | string | null;
-  questionCount?: number | string | null;
-  questionCorrect?: number | string | null;
+  scoreRatePercent?: number | null;
+  questionCount?: number | null;
+  questionCorrect?: number | null;
   status?: number;
-  statusStr?: string;
-  passed?: boolean | null;
+  statusName?: string;
   createTime?: string;
   watch?: boolean;
 }
@@ -18,8 +16,41 @@ export interface StudentProfile {
   userName?: string;
   realName?: string;
   workNo?: string;
-  departmentStr?: string;
+  departmentName?: string;
   jobTitle?: string;
+}
+
+export interface AiExamCounts {
+  total: number;
+  finalized: number;
+  validFinalized: number;
+  invalidFinalized: number;
+  waitingReview: number;
+  waitingVerification: number;
+  verificationFailed: number;
+  other: number;
+}
+
+export interface AiExamSummary {
+  trendSampleCount: number;
+  recentAveragePercent: number | null;
+  changeFromFirstPercentPoints: number | null;
+  volatilityPercentPoints: number | null;
+  questionAccuracyPercent: number | null;
+  accuracySampleCount: number;
+  finalizedPercent: number | null;
+}
+
+export interface AiLearningWorkspace {
+  student: StudentProfile;
+  counts: AiExamCounts;
+  summary: AiExamSummary;
+  trend: ExamRecord[];
+  recentExams: ExamRecord[];
+  insights: InsightItem[];
+  report: {summary: string; evidenceExamCount: number};
+  knowledgePoints: {available: boolean; reasonCode: string; message: string};
+  meta: {source: string; scope: string; complete: boolean; generatedAt: string};
 }
 
 export interface MetricItem {
@@ -39,4 +70,11 @@ export interface InsightItem {
   title: string;
   description: string;
   evidence: string;
+}
+
+export interface AiConversationMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  error?: boolean;
 }

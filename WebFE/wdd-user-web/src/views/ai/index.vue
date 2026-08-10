@@ -645,11 +645,6 @@ const openAnalysisReport = () => {
   reportVisible.value = true;
 };
 
-const buildLearningContext = () => {
-  const summary = trendRecords.value.map(item => `${item.paperName || '未命名试卷'}：得分率${scoreOf(item)}%，完全答对${finiteNumber(item.questionCorrect) ?? '未知'}/${finiteNumber(item.questionCount) ?? '未知'}题`).join('；');
-  return `学生${user.userName || ''}最近已定稿正式考试数据：${summary || '暂无'}。近场平均得分率${overallScore.value}%，已加载正式考试正确率${accuracyRate.value}%。当前没有知识点级数据，不得推断具体薄弱知识点。`;
-};
-
 const sendQuestion = async () => {
   const text = question.value.trim();
   if (!text || askLoading.value) return;
@@ -663,7 +658,7 @@ const sendQuestion = async () => {
   askLoading.value = true;
   assistantReply.value = '';
   try {
-    const result = await askAgent(`${buildLearningContext()}\n用户问题：${text}\n请只基于给出的真实数据回答；数据不足时明确说明。`, `student-${user.userName || 'local'}`);
+    const result = await askAgent(text);
     assistantReply.value = result.content;
     question.value = '';
   } catch (error: any) {

@@ -12,7 +12,10 @@
       <section class="trend-summary">
         <header class="section-head">
           <h2>近期表现</h2>
-          <button type="button" @click="$emit('open-tab', 'exam-analysis')">进入考情分析</button>
+          <div class="head-actions">
+            <button type="button" @click="$emit('ask-trend')">询问 AI</button>
+            <button type="button" @click="$emit('open-tab', 'exam-analysis')">进入考情分析</button>
+          </div>
         </header>
         <ExamTrendChart :records="trendRecords"/>
       </section>
@@ -46,7 +49,7 @@
       </div>
       <div class="service-summary">
         <span><i :class="serviceReady ? 'ready' : 'error'"></i>{{ serviceReady ? 'Agent 在线' : 'Agent 未连接' }}</span>
-        <span><i :class="modelAvailable ? 'ready' : modelConfigured ? 'warning' : 'muted'"></i>{{ modelAvailable ? '模型调用可用' : modelConfigured ? '模型待验证' : '模型未配置' }}</span>
+        <span><i :class="modelAvailable ? 'ready' : modelConfigured ? 'warning' : 'muted'"></i>{{ modelAvailable ? '模型调用可用' : modelConfigured ? '模型调用不可用' : '模型未配置' }}</span>
         <button type="button" @click="$emit('refresh-health')">重新检测</button>
       </div>
     </footer>
@@ -73,6 +76,7 @@ defineProps<{
 
 defineEmits<{
   (event: 'open-tab', tab: AiTabName): void;
+  (event: 'ask-trend'): void;
   (event: 'refresh-health'): void;
 }>();
 </script>
@@ -90,6 +94,7 @@ defineEmits<{
 .overview-sheet > section + section { border-left: 1px solid #ebeef5; }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
 .section-head h2 { margin: 0; color: #303133; font-size: 18px; font-weight: 500; }
+.head-actions { display: flex; align-items: center; gap: 18px; }
 .section-head button, .service-summary button { padding: 0; border: 0; background: transparent; color: #409eff; font-size: 14px; cursor: pointer; }
 .student-line { display: flex; align-items: baseline; gap: 22px; padding-bottom: 18px; border-bottom: 1px solid #ebeef5; }
 .student-line strong { color: #303133; font-size: 18px; font-weight: 500; }

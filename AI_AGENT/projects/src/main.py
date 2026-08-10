@@ -37,6 +37,18 @@ setup_logging(
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _cozeloop_enabled() -> bool:
+    """Tracing is opt-in because prompts may contain user-authored content."""
+    return os.getenv("COZE_LOOP_ENABLED", "false").lower() in {"1", "true", "yes"}
+
+
+def _flush_cozeloop() -> None:
+    if _cozeloop_enabled():
+        cozeloop.flush()
+
+
 from coze_coding_utils.helper.agent_helper import to_stream_input
 from coze_coding_utils.openai.handler import OpenAIChatHandler
 from coze_coding_utils.log.parser import LangGraphParser
@@ -99,8 +111,8 @@ class GraphService:
 
         try:
             graph = self._get_graph(ctx)
-            # custom tracer
-            run_config = init_run_config(graph, ctx)
+            # External tracing is disabled by default for local/private prompts.
+            run_config = init_run_config(graph, ctx) if _cozeloop_enabled() else {}
             run_config["configurable"] = {"thread_id": ctx.run_id}
 
             # 直接调用，LangGraph会在当前任务上下文中执行
@@ -135,10 +147,13 @@ class GraphService:
         run_id = ctx.run_id
         logger.info(f"Starting stream with run_id: {run_id}")
         graph = self._get_graph(ctx)
-        if graph_helper.is_agent_proj():
-            run_config = init_agent_config(graph, ctx)
+        if _cozeloop_enabled():
+            if graph_helper.is_agent_proj():
+                run_config = init_agent_config(graph, ctx)
+            else:
+                run_config = init_run_config(graph, ctx)  # vibeflow
         else:
-            run_config = init_run_config(graph, ctx)  # vibeflow
+            run_config = {}
 
         is_workflow = not graph_helper.is_agent_proj()
 
@@ -152,7 +167,7 @@ class GraphService:
         finally:
             # 清理任务记录
             self.running_tasks.pop(run_id, None)
-            cozeloop.flush()
+            _flush_cozeloop()
 
     # 取消执行 - 使用asyncio的标准方式
     def cancel_run(self, run_id: str, ctx: Optional[Context] = None) -> Dict[str, Any]:
@@ -211,7 +226,7 @@ class GraphService:
         _g.add_edge("sn", END)
         _graph = _g.compile()
 
-        run_config = init_run_config(_graph, ctx)
+        run_config = init_run_config(_graph, ctx) if _cozeloop_enabled() else {}
         return await _graph.ainvoke(payload, config=run_config)
 
     def graph_inout_schema(self) -> Any:
@@ -293,7 +308,9 @@ async def _probe_model_availability(force: bool = False) -> Dict[str, Any]:
         expected_model = _configured_model_name()
         headers = {"Authorization": f"Bearer {os.getenv('COZE_WORKLOAD_IDENTITY_API_KEY')}"}
         try:
-            async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
+            # Honour HTTP(S)_PROXY from the container environment. Local development
+            # often reaches model providers through a host-side proxy.
+            async with httpx.AsyncClient(timeout=10, trust_env=True) as client:
                 response = await client.get(models_url, headers=headers)
             if response.status_code in {401, 403}:
                 return _cache_model_probe(False, "MODEL_AUTHENTICATION_FAILED", "模型鉴权失败，请检查本地 API 配置")
@@ -317,7 +334,7 @@ async def _invoke_education_agent(message: str, session_id: str, headers, method
     ctx = new_context(method=method, headers=headers)
     request_context.set(ctx)
     agent = graph_helper.get_agent_instance("agents.agent", ctx)
-    run_config = init_agent_config(agent, ctx)
+    run_config = init_agent_config(agent, ctx) if _cozeloop_enabled() else {}
     run_config["configurable"] = {"thread_id": session_id}
     result = await agent.ainvoke(
         {"messages": [HumanMessage(content=message)]},
@@ -402,7 +419,7 @@ async def http_run(request: Request) -> Dict[str, Any]:
             }
         )
     finally:
-        cozeloop.flush()
+        _flush_cozeloop()
 
 
 HEADER_X_WORKFLOW_STREAM_MODE = "x-workflow-stream-mode"
@@ -522,7 +539,7 @@ async def http_node_run(node_id: str, request: Request):
             }
         )
     finally:
-        cozeloop.flush()
+        _flush_cozeloop()
 
 
 @app.post("/v1/chat/completions")
@@ -554,7 +571,7 @@ async def openai_chat_completions(request: Request):
         logger.error(f"JSON decode error in openai_chat_completions: {e}")
         raise HTTPException(status_code=400, detail="Invalid JSON format")
     finally:
-        cozeloop.flush()
+        _flush_cozeloop()
 
 
 @app.get("/api/v1/agents")
@@ -563,12 +580,101 @@ async def list_education_agents():
     return {
         "success": True,
         "agents": [
-            {"type": "exam_analysis", "name": "考试分析", "capabilities": ["成绩趋势", "错题统计", "薄弱项定位"]},
-            {"type": "learning_profile", "name": "学情画像", "capabilities": ["学习进度", "能力维度", "行动建议"]},
-            {"type": "learning_assessment", "name": "智能组卷", "capabilities": ["强化练习", "难度适配", "针对性训练"]},
-            {"type": "teaching_assistant", "name": "办学助手", "capabilities": ["概念解释", "学习答疑", "实践指导"]},
+            {"type": "exam_analysis", "name": "考试分析", "available": True, "execution": "webbe_code", "model_required": False, "capabilities": ["成绩趋势", "状态统计", "规则复盘"]},
+            {"type": "learning_profile", "name": "学情画像", "available": True, "execution": "webbe_code", "model_required": False, "capabilities": ["学习证据", "档案摘要", "行动入口"]},
+            {"type": "learning_assessment", "name": "智能组卷", "available": False, "execution": "disabled", "model_required": False, "capabilities": []},
+            {"type": "teaching_assistant", "name": "AI 助教", "available": True, "execution": "single_model", "model_required": True, "capabilities": ["成绩趋势解释", "个性化复习建议", "连续学习问答"]},
         ],
     }
+
+
+def _finite_number(value: Any) -> Optional[float]:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _bounded_number(value: Any, minimum: float, maximum: float, integer: bool = False) -> Optional[float]:
+    number = _finite_number(value)
+    if number is None or number < minimum or number > maximum:
+        return None
+    if integer and not number.is_integer():
+        return None
+    return int(number) if integer else number
+
+
+def _sanitize_learning_context(raw: Any) -> Optional[Dict[str, Any]]:
+    """Allow only anonymous aggregate evidence to enter the model prompt."""
+    if not isinstance(raw, dict) or raw.get("source") != "LOCAL_MYSQL":
+        return None
+    counts_raw = raw.get("counts") if isinstance(raw.get("counts"), dict) else {}
+    summary_raw = raw.get("summary") if isinstance(raw.get("summary"), dict) else {}
+    allowed_count_keys = (
+        "total", "finalized", "validFinalized", "invalidFinalized",
+        "waitingReview", "waitingVerification", "verificationFailed", "other",
+    )
+    counts = {key: _bounded_number(counts_raw.get(key), 0, 1_000_000, True) for key in allowed_count_keys}
+    total = counts.get("total")
+    if total is None or any(value is None or value > total for value in counts.values()):
+        return None
+    if counts["validFinalized"] + counts["invalidFinalized"] != counts["finalized"]:
+        return None
+    if (counts["finalized"] + counts["waitingReview"] + counts["waitingVerification"]
+            + counts["verificationFailed"] + counts["other"] != total):
+        return None
+
+    summary = {
+        "trendSampleCount": _bounded_number(summary_raw.get("trendSampleCount"), 0, 6, True),
+        "recentAveragePercent": _bounded_number(summary_raw.get("recentAveragePercent"), 0, 100),
+        "changeFromFirstPercentPoints": _bounded_number(summary_raw.get("changeFromFirstPercentPoints"), -100, 100),
+        "volatilityPercentPoints": _bounded_number(summary_raw.get("volatilityPercentPoints"), 0, 100),
+        "questionAccuracyPercent": _bounded_number(summary_raw.get("questionAccuracyPercent"), 0, 100),
+        "accuracyEvidenceExamCount": _bounded_number(summary_raw.get("accuracySampleCount"), 0, total, True),
+        "finalizedPercent": _bounded_number(summary_raw.get("finalizedPercent"), 0, 100),
+    }
+    trend = []
+    raw_trend = raw.get("trend") if isinstance(raw.get("trend"), list) else []
+    for item in raw_trend[:6]:
+        if not isinstance(item, dict):
+            continue
+        score = _bounded_number(item.get("scoreRatePercent"), 0, 100)
+        correct = _bounded_number(item.get("questionCorrect"), 0, 1_000_000, True)
+        count = _bounded_number(item.get("questionCount"), 1, 1_000_000, True)
+        if correct is not None and count is not None and correct > count:
+            correct = None
+            count = None
+        trend.append({"scoreRatePercent": score, "questionCorrect": correct, "questionCount": count})
+    if summary["trendSampleCount"] is None or summary["trendSampleCount"] != len(trend):
+        return None
+    knowledge_raw = raw.get("knowledgePoints") if isinstance(raw.get("knowledgePoints"), dict) else {}
+    return {
+        "source": "LOCAL_MYSQL",
+        "counts": counts,
+        "summary": summary,
+        "trend": trend,
+        "knowledgePoints": {
+            "available": knowledge_raw.get("available") is True,
+            "reasonCode": str(knowledge_raw.get("reasonCode") or "QUESTION_TAGS_NOT_AVAILABLE")[:64],
+        },
+    }
+
+
+def _ground_message(message: str, raw_context: Any) -> str:
+    context = _sanitize_learning_context(raw_context)
+    if context is None:
+        return message
+    return (
+        "以下是由本地 MySQL 后端计算后、去除姓名工号和完整答卷的脱敏学习数据摘要。"
+        "只能依据该摘要回答，数据不足时必须明确说明，不得推测知识点。\n"
+        f"脱敏学习数据摘要：{json.dumps(context, ensure_ascii=False, separators=(',', ':'))}\n"
+        f"用户问题：{message}"
+    )
 
 
 @app.post("/api/v1/chat")
@@ -579,9 +685,14 @@ async def education_chat(request: Request):
     session_id = str(body.get("session_id") or "default")
     if not message:
         raise HTTPException(status_code=400, detail="message is required")
+    if len(message) > 1000:
+        raise HTTPException(status_code=400, detail="message is too long")
+    if len(session_id) > 64:
+        raise HTTPException(status_code=400, detail="session_id is too long")
 
     try:
-        content = await _invoke_education_agent(message, session_id, request.headers, "education_chat")
+        grounded_message = _ground_message(message, body.get("learning_context"))
+        content = await _invoke_education_agent(grounded_message, session_id, request.headers, "education_chat")
         _cache_model_probe(True, "OK", "模型调用可用")
         return {"success": True, "message": content, "session_id": session_id}
     except APIConnectionError:
@@ -618,7 +729,7 @@ async def education_chat(request: Request):
             "message": "模型调用失败，请稍后重试",
         })
     finally:
-        cozeloop.flush()
+        _flush_cozeloop()
 
 
 @app.get("/health")
@@ -626,10 +737,6 @@ async def health_check(force: bool = False):
     try:
         model_configured = _model_configured()
         probe = await _probe_model_availability(force=force)
-        data_source_ready = bool(
-            os.getenv("COZE_SUPABASE_URL")
-            and os.getenv("COZE_SUPABASE_ANON_KEY")
-        )
         return {
             "status": "ok" if probe["available"] else "degraded",
             "message": "Agent 服务已启动，模型调用可用" if probe["available"] else "Agent 服务已启动，但模型调用不可用",
@@ -639,7 +746,8 @@ async def health_check(force: bool = False):
             "model_ready": bool(probe["available"]),
             "model_probe_code": probe["code"],
             "model_message": probe["message"],
-            "data_source_ready": data_source_ready,
+            "data_source_ready": True,
+            "data_source_mode": "WEBBE_CODE_ONLY",
         }
     except Exception:
         logger.error("Health model probe failed", exc_info=True)

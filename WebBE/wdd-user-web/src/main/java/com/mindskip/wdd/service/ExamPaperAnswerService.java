@@ -14,6 +14,8 @@ import com.mindskip.wdd.viewmodel.exam.answer.ExamPaperAnswerEditResponseVM;
 import com.mindskip.wdd.viewmodel.exam.answer.ExamPaperAnswerPageRequestVM;
 import com.mindskip.wdd.viewmodel.exam.answer.ExamPaperAnswerResult;
 
+import java.util.List;
+
 /**
  * @version 1.7.0
  * @description: 答卷
@@ -47,6 +49,15 @@ public interface ExamPaperAnswerService extends IService<ExamPaperAnswer> {
      * @return the page info
      */
     PageInfo<ExamPaperAnswer> page(ExamPaperAnswerPageRequestVM requestVM);
+
+    /**
+     * 当前用户的全部正式考试答卷记录（不按 paperType 过滤）。
+     * paperType 表示组卷方式，并不代表是否为正式考试。
+     *
+     * @param userId 当前登录用户 ID
+     * @return 按业务层用于学习分析的答卷记录
+     */
+    List<ExamPaperAnswer> getLearningRecords(Integer userId);
 
 
     /**

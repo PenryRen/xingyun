@@ -67,16 +67,16 @@ services:
       context: ./AI_AGENT/projects
       dockerfile: Dockerfile
     image: xingyun/agent:latest
-    ports:
-      - "127.0.0.1:8000:8000"
     environment:
       COZE_WORKLOAD_IDENTITY_API_KEY: ${COZE_WORKLOAD_IDENTITY_API_KEY:-}
       COZE_INTEGRATION_MODEL_BASE_URL: ${COZE_INTEGRATION_MODEL_BASE_URL:-}
-      COZE_SUPABASE_URL: ${COZE_SUPABASE_URL:-}
-      COZE_SUPABASE_ANON_KEY: ${COZE_SUPABASE_ANON_KEY:-}
       COZE_WORKSPACE_PATH: /app
-      COZE_DIRECT_DOH_ENABLED: "true"
-      COZE_DOH_REFRESH_SECONDS: "300"
+      HTTP_PROXY: ${AGENT_HTTP_PROXY:-}
+      HTTPS_PROXY: ${AGENT_HTTPS_PROXY:-}
+      NO_PROXY: ${AGENT_NO_PROXY:-localhost,127.0.0.1,backend,mysql,redis,nginx,user,admin,agent}
+      COZE_DIRECT_DOH_ENABLED: ${COZE_DIRECT_DOH_ENABLED:-false}
+      COZE_DOH_REFRESH_SECONDS: ${COZE_DOH_REFRESH_SECONDS:-300}
+      COZE_LOOP_ENABLED: ${COZE_LOOP_ENABLED:-false}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/live', timeout=5)"]
@@ -103,10 +103,12 @@ services:
       SPRING_REDIS_PASSWORD: redis123
       SPRING_REDIS_DATABASE: 1
       SYSTEM_LOCAL_DEVELOPMENT: "true"
+      AI_AGENT_BASE_URL: http://agent:8000
     restart: unless-stopped
     depends_on:
       - mysql
       - redis
+      - agent
 
   nginx:
     build:

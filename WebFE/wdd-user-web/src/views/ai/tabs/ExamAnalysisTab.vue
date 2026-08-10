@@ -10,7 +10,10 @@
 
     <div class="analysis-sheet">
       <section class="chart-panel">
-        <h2>近 {{ trendRecords.length }} 场考试得分趋势</h2>
+        <header class="chart-head">
+          <h2>近 {{ trendRecords.length }} 场考试得分趋势</h2>
+          <button type="button" @click="$emit('ask-trend')">询问 AI</button>
+        </header>
         <ExamTrendChart :records="trendRecords"/>
       </section>
       <section class="status-panel">
@@ -94,6 +97,7 @@ defineProps<{
 
 defineEmits<{
   (event: 'open-report'): void;
+  (event: 'ask-trend'): void;
   (event: 'view-record', record: ExamRecord): void;
 }>();
 
@@ -104,10 +108,9 @@ const finiteNumber = (value: unknown): number | null => {
 };
 
 const scoreDisplay = (record: ExamRecord) => {
-  const total = finiteNumber(record.paperScore);
-  const score = finiteNumber(record.userScore);
-  if (record.status !== 2 || total === null || score === null || total <= 0 || score < 0 || score > total) return '--';
-  return `${Math.round(score / total * 100)}%`;
+  const score = finiteNumber(record.scoreRatePercent);
+  if (record.status !== 2 || score === null) return '--';
+  return `${Math.round(score)}%`;
 };
 
 const questionSummary = (record: ExamRecord) => {
@@ -135,6 +138,8 @@ const formatDateTime = (value?: string) => value ? value.slice(0, 16) : '--';
 .analysis-sheet > section { min-width: 0; padding: 22px 28px; }
 .analysis-sheet > section + section { border-left: 1px solid #ebeef5; }
 .analysis-sheet h2, .section-head h2 { margin: 0; color: #303133; font-size: 18px; font-weight: 500; }
+.chart-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.chart-head button { padding: 0; border: 0; background: transparent; color: #409eff; font-size: 14px; cursor: pointer; }
 .status-body { display: grid; grid-template-columns: 130px minmax(0, 1fr); align-items: center; gap: 18px; min-height: 230px; }
 .status-donut { position: relative; width: 120px; height: 120px; border-radius: 50%; }
 .status-donut::after { position: absolute; inset: 24px; border-radius: 50%; background: #fff; content: ''; }

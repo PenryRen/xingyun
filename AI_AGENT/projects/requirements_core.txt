@@ -26,6 +26,7 @@ uvicorn==0.38.0
 
 # 数据库
 SQLAlchemy==2.0.44
+PyMySQL==1.1.2
 psycopg==3.3.0
 psycopg-binary==3.3.0
 psycopg-pool==3.3.0

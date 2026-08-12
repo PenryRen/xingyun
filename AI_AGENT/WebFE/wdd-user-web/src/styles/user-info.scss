@@ -1,0 +1,384 @@
+
+.user-index-info-contain {
+  .el-card__body {
+    padding: 0px;
+    display: flex;
+    flex-direction: row;
+
+    .left {
+      width: 256px;
+      padding: 30px 0;
+      min-height: 500px;
+      border-right: 1px solid rgba(228, 232, 235, 1);
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+
+      .title {
+        text-align: center;
+        margin-bottom: 20px;
+        font-weight: 700;
+        font-size: 15px;
+      }
+
+      .link {
+        height: 36px;
+        line-height: 36px;
+        width: 172px;
+        border-radius: 18px;
+        color: #4c596b;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        margin: 4px 40px;
+        font-size: 14px;
+
+        svg {
+          margin-right: 15px;
+        }
+      }
+
+      .link-active {
+        background: #68bfd6;
+        color: #fff;
+        height: 36px;
+        line-height: 36px;
+        width: 172px;
+        border-radius: 18px;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        margin: 4px 40px;
+        font-size: 14px;
+
+        svg {
+          margin-right: 15px;
+          color: #fff;
+        }
+      }
+    }
+
+  }
+}
+
+.user-index-info {
+  .el-card__body {
+    .center {
+      height: 100%;
+      width: 380px;
+      display: flex;
+      flex-direction: column;
+      padding: 80px 20px 20px 60px;
+
+      div {
+        margin-bottom: 15px;
+        font-size: 14px;
+
+        span:first-child {
+          width: 80px;
+          display: inline-block;
+        }
+      }
+    }
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 80px 20px 20px 30px;
+
+      div {
+        margin-bottom: 10px;
+        font-size: 14px;
+
+        span:first-child {
+          width: 50px;
+          display: inline-block;
+        }
+      }
+
+      .user-image {
+        margin: 30px 0px 0px 40px;
+      }
+    }
+  }
+}
+
+
+.user-update-info {
+  .el-card__body {
+
+    .center {
+      height: 100%;
+      width: 150px;
+      display: flex;
+      flex-direction: column;
+
+      .upload {
+        margin-left: 35px;
+        margin-top: 60px;
+      }
+    }
+
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 20px 20px 30px;
+
+      span {
+        font-size: 14px;
+      }
+    }
+
+  }
+}
+
+
+.user-change-info {
+  .el-card__body {
+
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 20px 20px 100px;
+      max-width: 600px;
+
+      span {
+        margin-bottom: 15px;
+        font-size: 14px;
+      }
+    }
+
+  }
+}
+
+
+.user-change-password {
+  .el-card__body {
+
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 20px 20px 40px;
+    }
+
+  }
+}
+
+.user-event-info {
+  .el-card__body {
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 20px 20px 40px;
+
+      .event-list {
+        .item {
+          font-size: 14px;
+          background-color: rgba(243, 243, 243, 0.4);
+          display: flex;
+          flex-direction: row;
+          margin: 5px 10px;
+          padding: 10px 5px;
+
+          .content {
+            flex: 1;
+          }
+
+          .createTime {
+            width: 150px;
+          }
+        }
+      }
+    }
+
+  }
+}
+
+
+.user-apply-info {
+
+
+  .el-card__body {
+    width: 100%;
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 20px 20px 40px;
+
+      .user-apply-card {
+        margin: 0px 5px 20px 5px;
+        border: 0px !important;
+        background-color: #f9f9f9;
+
+        .user-apply-content {
+          width: 100%;
+          padding: 20px;
+        }
+      }
+
+    }
+  }
+
+}
+
+
+.user-credential-info {
+  .el-card__body {
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 20px 20px 40px;
+    }
+
+  }
+}
+
+
+.user-comment-info {
+
+
+  .el-card__body {
+    width: 100%;
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 20px 20px 40px;
+
+      .user-comment-card {
+        margin: 0px 5px 20px 5px;
+        border: 0px !important;
+        background-color: #f9f9f9;
+
+        .user-comment-content {
+          width: 100%;
+
+          .forum-title {
+            font-weight: 600;
+            color: #34495e;
+            padding: 20px;
+          }
+
+          .reply-content {
+            color: #888888;
+            background-color: #f1f1f1;
+            padding: 20px 20px;
+          }
+
+          .comment-content {
+            font-size: 14px;
+            word-break: break-word;
+            margin: 0px !important;
+          }
+
+          .user-comment-content {
+            padding: 20px;
+          }
+
+          .comment-create-time {
+            font-size: 14px;
+            color: #909399;
+          }
+
+          .comment-button {
+            padding: 10px 20px;
+            margin-bottom: 0px;
+            display: flex;
+            justify-content: space-between;
+
+            .comment-cancel-button {
+              border-radius: 0px;
+            }
+          }
+        }
+      }
+
+    }
+  }
+}
+
+
+.user-train-info {
+  .el-card__body {
+
+    .right {
+      height: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 20px 20px 40px;
+
+      .train-list {
+        .train-item {
+          font-size: 14px;
+          background-color: rgba(243, 243, 243, 0.4);
+          display: flex;
+          flex-direction: row;
+          margin: 5px 10px;
+          padding: 20px;
+
+          .course-image {
+            width: 220px;
+            height: 124px;
+            cursor: pointer;
+          }
+
+          .user-train-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0px 10px;
+
+            .train-title {
+              color: #212121;
+              cursor: pointer;
+            }
+
+            .train-description {
+              color: #666;
+              font-size: 13px;
+              flex: 1;
+              padding: 10px 0px;
+            }
+
+            .train-foot {
+              display: flex;
+              flex-direction: row;
+              justify-content: flex-end;
+              align-items: center;
+              font-size: 13px;
+              color: #99a2aa;
+
+              div {
+                margin-left: 10px
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+}

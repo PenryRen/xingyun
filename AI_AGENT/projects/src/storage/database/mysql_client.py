@@ -1,8 +1,8 @@
-"""MySQL connection support for the standalone learning-data query module.
+"""Shared MySQL connection support for the AI Agent.
 
-This module is intentionally independent from the Agent graph.  It only creates
-SQLAlchemy connections to the existing WebBE ``wdd`` database and marks MySQL
-sessions as read-only while callers use them.
+Both the deterministic WebBE learning-data queries and the Agent-owned ``ai_*``
+tables use this module. Credentials are read from environment variables and are
+never interpolated into log messages or source files.
 """
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ class MysqlSettings:
 
 
 def create_mysql_engine(settings: Optional[MysqlSettings] = None) -> Engine:
-    """Create a bounded SQLAlchemy pool for short, read-only query calls."""
+    """Create a bounded SQLAlchemy pool shared by read and write repositories."""
 
     resolved = settings or MysqlSettings.from_env()
     return create_engine(

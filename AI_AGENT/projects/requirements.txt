@@ -15,7 +15,6 @@ chardet==5.2.0
 charset-normalizer==3.4.4
 click==8.3.1
 coverage==7.13.4
-coze-coding-dev-sdk==0.5.9
 coze-coding-utils==0.2.4
 coze-workload-identity==0.1.4
 cozeloop==0.1.25
@@ -55,7 +54,6 @@ langchain-openai==1.0.1
 langchain-community==0.3.31
 langgraph==1.0.2
 langgraph-checkpoint==3.0.0
-langgraph-checkpoint-postgres==3.0.1
 langgraph-prebuilt==1.0.2
 langgraph-sdk==0.2.9
 langsmith==0.4.39

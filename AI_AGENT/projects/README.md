@@ -197,9 +197,13 @@ pip install -r requirements.txt
 创建 `.env` 文件（在项目根目录）：
 
 ```bash
-# Supabase 数据库配置
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_KEY=your_supabase_anon_key
+# 项目现有 MySQL（Docker 内 host 使用 mysql，宿主机使用 127.0.0.1）
+XINGYUN_MYSQL_HOST=mysql
+XINGYUN_MYSQL_PORT=3306
+XINGYUN_MYSQL_DATABASE=wdd
+XINGYUN_MYSQL_USERNAME=your_mysql_user
+XINGYUN_MYSQL_PASSWORD=your_mysql_password
+XINGYUN_MYSQL_AUTO_CREATE_AI_SCHEMA=true
 
 # 豆包大模型配置
 COZE_WORKLOAD_IDENTITY_API_KEY=your_api_key
@@ -209,13 +213,13 @@ COZE_INTEGRATION_MODEL_BASE_URL=https://your-model-base-url.com
 COZE_WORKSPACE_PATH=/path/to/your/project
 ```
 
-#### 获取 Supabase 凭证
+#### 配置 MySQL 凭证
 
-1. 注册并登录 [Supabase](https://supabase.com/)
-2. 创建新项目
-3. 在项目设置中找到：
-   - Project URL（用于 `SUPABASE_URL`）
-   - anon/public key（用于 `SUPABASE_KEY`）
+复用 WebBE 使用的 `wdd` MySQL。生产环境建议为 AI Agent 创建独立账号：
+
+- 查询 WebBE 学情数据只授予所需 `t_*` 表的 `SELECT` 权限；
+- Agent 自有数据只授予 `ai_*` 表的读写权限；
+- 密码只写入未跟踪的 `.env`，不得提交到 Git。
 
 #### 获取豆包大模型 API Key
 
@@ -225,18 +229,20 @@ COZE_WORKSPACE_PATH=/path/to/your/project
 
 ### 三、数据库初始化
 
+完整迁移、权限、部署和回退说明见 [AI Agent 数据库迁移与交接指南](MYSQL_DATABASE_MIGRATION.md)。
+
 #### 1. 同步数据库表结构
 
 ```bash
 # 进入项目目录
 cd /workspace/projects
 
-# 生成模型
-coze-coding-ai db generate-models
-
-# 执行数据库迁移
-coze-coding-ai db upgrade
+# 显式创建 Agent 自有表（可重复执行，不会删除 WebBE 数据）
+mysql -h 127.0.0.1 -P 3306 -u YOUR_USER -p wdd \
+  < migrations/001_mysql_ai_tables.sql
 ```
+
+本地开发也可设置 `XINGYUN_MYSQL_AUTO_CREATE_AI_SCHEMA=true`，首次使用数据库工具时仅创建缺失的 `ai_*` 表。
 
 #### 2. 验证数据库连接
 
@@ -244,13 +250,13 @@ coze-coding-ai db upgrade
 
 ```python
 # test_db_connection.py
-from storage.database.supabase_client import get_supabase_client
+from sqlalchemy import text
+from storage.database.db import get_engine
 
 try:
-    client = get_supabase_client()
-    response = client.table('health_check').select('*').execute()
+    with get_engine().connect() as connection:
+        connection.execute(text("SELECT 1"))
     print("✅ 数据库连接成功！")
-    print(response.data)
 except Exception as e:
     print(f"❌ 数据库连接失败：{e}")
 ```

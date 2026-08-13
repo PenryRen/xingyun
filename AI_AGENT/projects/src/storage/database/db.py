@@ -1,91 +1,78 @@
+"""Compatibility session API backed exclusively by the project MySQL.
+
+Older Agent tools import ``get_session`` from this module. Keeping that API
+lets the multi-Agent graph stay unchanged while using one MySQL database path.
+"""
+
+from __future__ import annotations
+
 import os
-import time
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import OperationalError
-import logging
-logger = logging.getLogger(__name__)
+from threading import Lock
 
-MAX_RETRY_TIME = 20  # 连接最大重试时间（秒）
-# Load environment variables from .env if present
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except Exception:
-    pass
+from sqlalchemy import Engine, URL
+from sqlalchemy.orm import Session, sessionmaker
 
-def get_db_url() -> str:
-    """Build database URL from environment."""
-    # 达梦数据库连接字符串格式:
-    # dm://username:password@host:port/database
-    url = os.getenv("DM_DATABASE_URL") or ""
-    if url is not None and url != "":
-        return url
-    
-    # 从环境变量构建连接字符串
-    username = os.getenv("DM_USERNAME", "SYSDBA")
-    password = os.getenv("DM_PASSWORD", "SYSDBA")
-    host = os.getenv("DM_HOST", "localhost")
-    port = os.getenv("DM_PORT", "5236")
-    database = os.getenv("DM_DATABASE", "SYSDBA")
-    
-    url = f"dm://{username}:{password}@{host}:{port}/{database}"
-    logger.info(f"Using DM database URL: dm://{username}:***@{host}:{port}/{database}")
-    return url
-_engine = None
-_SessionLocal = None
+from storage.database.mysql_client import MysqlSettings, get_mysql_engine
 
-def _create_engine_with_retry():
-    url = get_db_url()
-    if url is None or url == "":
-        logger.error("DM_DATABASE_URL is not set")
-        raise ValueError("DM_DATABASE_URL is not set")
-    size = 100
-    overflow = 100
-    recycle = 1800
-    timeout = 30
-    engine = create_engine(
-        url,
-        pool_size=size,
-        max_overflow=overflow,
-        pool_pre_ping=True,
-        pool_recycle=recycle,
-        pool_timeout=timeout,
-    )
-    # 验证连接，带重试
-    start_time = time.time()
-    last_error = None
-    while time.time() - start_time < MAX_RETRY_TIME:
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
-            return engine
-        except OperationalError as e:
-            last_error = e
-            elapsed = time.time() - start_time
-            logger.warning(f"Database connection failed, retrying... (elapsed: {elapsed:.1f}s)")
-            time.sleep(min(1, MAX_RETRY_TIME - elapsed))
-    logger.error(f"Database connection failed after {MAX_RETRY_TIME}s: {last_error}")
-    raise last_error  # pyright: ignore [reportGeneralTypeIssues]
 
-def get_engine():
-    global _engine
-    if _engine is None:
-        _engine = _create_engine_with_retry()
-    return _engine
+_SessionLocal: sessionmaker[Session] | None = None
+_schema_initialized = False
+_schema_lock = Lock()
 
-def get_sessionmaker():
+
+def get_db_url() -> URL:
+    """Return a structured MySQL URL without exposing credentials in strings."""
+
+    return MysqlSettings.from_env().sqlalchemy_url()
+
+
+def get_engine() -> Engine:
+    """Return the shared MySQL engine."""
+
+    return get_mysql_engine()
+
+
+def _auto_create_enabled() -> bool:
+    value = os.getenv("XINGYUN_MYSQL_AUTO_CREATE_AI_SCHEMA", "true")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def ensure_ai_schema(engine: Engine | None = None) -> None:
+    """Create only missing ``ai_*`` tables; never drop or rewrite business data."""
+
+    global _schema_initialized
+    if _schema_initialized or not _auto_create_enabled():
+        return
+
+    with _schema_lock:
+        if _schema_initialized:
+            return
+        from storage.database.shared.model import Base
+
+        Base.metadata.create_all(bind=engine or get_engine(), checkfirst=True)
+        _schema_initialized = True
+
+
+def get_sessionmaker() -> sessionmaker[Session]:
     global _SessionLocal
     if _SessionLocal is None:
-        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
+        engine = get_engine()
+        ensure_ai_schema(engine)
+        _SessionLocal = sessionmaker(
+            bind=engine,
+            autoflush=False,
+            expire_on_commit=False,
+        )
     return _SessionLocal
 
-def get_session():
+
+def get_session() -> Session:
     return get_sessionmaker()()
 
 __all__ = [
     "get_db_url",
     "get_engine",
+    "ensure_ai_schema",
     "get_sessionmaker",
     "get_session",
 ]

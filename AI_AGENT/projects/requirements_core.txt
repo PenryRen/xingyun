@@ -4,19 +4,10 @@ langchain-core==1.0.2
 langchain-openai==1.0.1
 langgraph==1.0.2
 langgraph-checkpoint==3.0.0
-langgraph-checkpoint-postgres==3.0.1
 langgraph-prebuilt==1.0.2
 langgraph-sdk==0.2.9
 
-# Supabase 客户端
-supabase==2.27.3
-postgrest==2.27.3
-realtime==2.27.3
-supabase-auth==2.27.3
-supabase-functions==2.27.3
-
-# Coze SDK
-coze-coding-dev-sdk==0.5.9
+# Coze 运行时工具
 coze-coding-utils==0.2.4
 coze-workload-identity==0.1.4
 
@@ -27,9 +18,6 @@ uvicorn==0.38.0
 # 数据库
 SQLAlchemy==2.0.44
 PyMySQL==1.1.2
-psycopg==3.3.0
-psycopg-binary==3.3.0
-psycopg-pool==3.3.0
 alembic==1.16.5
 
 # LLM 相关

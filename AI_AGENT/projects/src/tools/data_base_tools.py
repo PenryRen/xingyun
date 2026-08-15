@@ -403,7 +403,14 @@ def add_answer_record(
     )
 
 
+# 别名：兼容旧函数名
+create_question = add_question
+create_exam_record = add_exam_record
+get_questions = get_question_bank
+
+
 def model_to_dict(model: Any) -> dict[str, Any]:
+    """将 SQLAlchemy 模型实例转换为字典"""
     if model is None:
         return {}
     if isinstance(model, dict):

@@ -32,7 +32,7 @@ export default ({mode}: ConfigEnv): UserConfig => {
       open: true, // 运行自动打开浏览器
       proxy: {
         '/api': {
-          target: 'http://192.168.1.210:16000',
+          target: 'http://localhost:16000',
           changeOrigin: true
         },
         '/ai-agent': {

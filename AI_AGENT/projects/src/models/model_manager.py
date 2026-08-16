@@ -1,9 +1,7 @@
 import os
 from typing import Optional, Dict, Any
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.llms import HuggingFaceHub
-from langchain_community.chat_models import ChatHuggingFace
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace, HuggingFaceEmbeddings
 
 class ModelManager:
     """模型管理器 - 负责初始化大模型并支持本地降级"""
@@ -32,8 +30,8 @@ class ModelManager:
         
         ##优先使用远程模型（OpenAI 兼容接口）
         try:
-            api_key = os.getenv("OPENAI_API_KEY", os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY"))
-            base_url = os.getenv("OPENAI_BASE_URL", os.getenv("COZE_INTEGRATION_MODEL_BASE_URL"))
+            api_key = os.getenv("OPENAI_API_KEY")
+            base_url = os.getenv("OPENAI_BASE_URL")
 
             # 检查远程模型配置是否完整
             if not api_key:
@@ -50,27 +48,27 @@ class ModelManager:
                 timeout=timeout
             )
             
-            # 测试远程模型连接
-            llm.invoke("test")
             return llm
         except Exception as e:
-            print(f"远程模型初始化失败，回退到本地模型: {e}")
+            print(f"远程模型初始化失败: {type(e).__name__}: {e}")
             
         # 远程模型失败时回退到本地模型
-        try:
-            local_model_name = model_name or "mistralai/Mistral-7B-v0.1"
-            llm = HuggingFaceHub(
-                repo_id=local_model_name,
-                model_kwargs={
-                    "temperature": temperature,
-                    "max_length": 1024
-                }
-            )
-            chat_model = ChatHuggingFace(llm=llm)
-            return chat_model
-        except Exception as e:
-            print(f"本地模型初始化失败: {e}")
-            raise Exception("所有模型初始化失败，请检查配置")
+        if use_local:
+            try:
+                local_model_name = model_name or "mistralai/Mistral-7B-v0.1"
+                llm = HuggingFaceEndpoint(
+                    repo_id=local_model_name,
+                    model_kwargs={
+                        "temperature": temperature,
+                        "max_length": 1024
+                    }
+                )
+                chat_model = ChatHuggingFace(llm=llm)
+                return chat_model
+            except Exception as e:
+                print(f"本地模型初始化失败: {e}")
+        
+        raise Exception("所有模型初始化失败，请检查配置")
 
     @staticmethod
     def get_model_config() -> Dict[str, Any]:
@@ -82,8 +80,8 @@ class ModelManager:
         """
         return {
             "default_model": os.getenv("MODEL_NAME", "gpt-4o-mini"),
-            "api_key": os.getenv("OPENAI_API_KEY", os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY")),
-            "base_url": os.getenv("OPENAI_BASE_URL", os.getenv("COZE_INTEGRATION_MODEL_BASE_URL")),
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "base_url": os.getenv("OPENAI_BASE_URL"),
             "temperature": float(os.getenv("MODEL_TEMPERATURE", "0.7")),
             "timeout": int(os.getenv("MODEL_TIMEOUT", "600"))
         }
@@ -124,8 +122,8 @@ class ModelManager:
         
         # 回退到远程模型
         try:
-            api_key = os.getenv("OPENAI_API_KEY", os.getenv("COZE_WORKLOAD_IDENTITY_API_KEY"))
-            base_url = os.getenv("OPENAI_BASE_URL", os.getenv("COZE_INTEGRATION_MODEL_BASE_URL"))
+            api_key = os.getenv("OPENAI_API_KEY")
+            base_url = os.getenv("OPENAI_BASE_URL")
             
             if not api_key:
                 raise Exception("远程embedding模型 API 密钥未配置")

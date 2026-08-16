@@ -24,7 +24,7 @@ class S3SyncStorage:
     """S3兼容存储实现"""
 
     def __init__(self, *, endpoint_url: Optional[str] = None, access_key: str, secret_key: str, bucket_name: str, region: str = "cn-beijing"):
-        self.endpoint_url = os.environ.get("COZE_BUCKET_ENDPOINT_URL") or endpoint_url or ''
+        self.endpoint_url = os.environ.get("S3_ENDPOINT_URL") or endpoint_url or ''
         self.access_key = access_key
         self.secret_key = secret_key
         self.bucket_name = bucket_name
@@ -34,20 +34,6 @@ class S3SyncStorage:
     def _get_client(self):
         if self._client is None:
             endpoint = self.endpoint_url
-            if endpoint is None or endpoint == "":
-                try:
-                    from coze_workload_identity import Client as CozeEnvClient
-                    coze_env_client = CozeEnvClient()
-                    env_vars = coze_env_client.get_project_env_vars()
-                    coze_env_client.close()
-                    for env_var in env_vars:
-                        if env_var.key == "COZE_BUCKET_ENDPOINT_URL":
-                            endpoint = env_var.value.replace("'", "'\\''")
-                            self.endpoint_url = endpoint
-                            break
-                except Exception as e:
-                    logger.error(f"Error loading COZE_BUCKET_ENDPOINT_URL: {e}")
-                    # 保持向下校验逻辑，避免在此处中断
             if endpoint is None or endpoint == "":
                 logger.error("未配置存储端点：请设置endpoint_url")
                 raise ValueError("未配置存储端点：请设置endpoint_url")
@@ -59,27 +45,6 @@ class S3SyncStorage:
                 aws_secret_access_key=self.secret_key,
                 region_name=self.region,
             )
-
-            # 注册 before-call 钩子，发送前注入 x-storage-token 头
-            def _inject_header(**kwargs):
-                try:
-                    from coze_workload_identity import Client as CozeClient
-                    coze_client = CozeClient()
-                    try:
-                        token = coze_client.get_access_token()
-                    except Exception as e:
-                        logger.error("Error loading COZE_WORKLOAD_IDENTITY_TOKEN: %s", e)
-                        token = None
-                        raise e
-                    finally:
-                        coze_client.close()
-                    params = kwargs.get("params", {})
-                    headers = params.setdefault("headers", {})
-                    headers["x-storage-token"] = token
-                except Exception as e:
-                    logger.error("Error loading COZE_WORKLOAD_IDENTITY_TOKEN: %s", e)
-                    pass
-            client.meta.events.register("before-call.s3", _inject_header)
             self._client = client
         return self._client
 
@@ -105,9 +70,9 @@ class S3SyncStorage:
 
     def _resolve_bucket(self, bucket: Optional[str]) -> str:
         """统一解析 bucket 来源，确保得到有效桶名。"""
-        target_bucket = bucket or os.environ.get("COZE_BUCKET_NAME") or self.bucket_name
+        target_bucket = bucket or os.environ.get("S3_BUCKET_NAME") or self.bucket_name
         if not target_bucket:
-            raise ValueError("未配置 bucket：请传入 bucket 或设置 COZE_BUCKET_NAME，或在实例化时提供 bucket_name")
+            raise ValueError("未配置 bucket：请传入 bucket 或设置 S3_BUCKET_NAME，或在实例化时提供 bucket_name")
         return target_bucket
 
     def _validate_file_name(self, name: str) -> None:
@@ -231,60 +196,16 @@ class S3SyncStorage:
             raise e
 
     def generate_presigned_url(self, *, key: str, bucket: Optional[str] = None, expire_time: int = 1800) -> str:
-        """通过 S3 Proxy 生成签名 URL。"""
-        import json
-        import urllib.request as urllib_request
+        """通过 S3 客户端生成签名 URL。"""
         try:
-            from coze_workload_identity import Client as CozeClient
-            coze_client = CozeClient()
-            try:
-                token = coze_client.get_access_token()
-            finally:
-                try:
-                    coze_client.close()
-                except Exception:
-                    # 资源释放失败不影响后续流程
-                    pass
-        except Exception as e:
-            logger.error(f"Error loading x-storage-token: {e}")
-            raise RuntimeError(f"获取 x-storage-token 失败: {e}")
-        try:
-            sign_base = os.environ.get("COZE_BUCKET_ENDPOINT_URL") or self.endpoint_url
-            if not sign_base:
-                raise ValueError("未配置签名端点：请设置 COZE_BUCKET_ENDPOINT_URL 或传入 endpoint_url")
-            sign_url_endpoint = sign_base.rstrip("/") + "/sign-url"
-
-            headers = {
-                "Content-Type": "application/json",
-                "x-storage-token": token,
-            }
-
+            client = self._get_client()
             target_bucket = self._resolve_bucket(bucket)
-            payload = {"bucket_name": target_bucket, "path": key, "expire_time": expire_time}
-            data = json.dumps(payload).encode("utf-8")
-            request = urllib_request.Request(sign_url_endpoint, data=data, headers=headers, method="POST")
-        except Exception as e:
-            logger.error(f"Error creating request for sign-url: {e}")
-            raise RuntimeError(f"创建 sign-url 请求失败: {e}")
-
-        try:
-            with urllib_request.urlopen(request) as resp:
-                resp_bytes = resp.read()
-                content_type = resp.headers.get("Content-Type", "")
-                text = resp_bytes.decode("utf-8", errors="replace")
-                if "application/json" in content_type or text.strip().startswith("{"):
-                    try:
-                        obj = json.loads(text)
-                    except Exception:
-                        return text
-                    data = obj.get("data")
-                    if isinstance(data, dict) and "url" in data:
-                        return data["url"]
-                    url_value = obj.get("url") or obj.get("signed_url") or obj.get("presigned_url")
-                    if url_value:
-                        return url_value
-                    raise ValueError("签名服务返回缺少 data.url/url 字段")
-                return text
+            url = client.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': target_bucket, 'Key': key},
+                ExpiresIn=expire_time
+            )
+            return url
         except Exception as e:
             raise RuntimeError(f"生成签名URL失败: {e}")
 

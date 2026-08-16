@@ -650,7 +650,7 @@ const sendQuestion = async () => {
   if (!text || askLoading.value) return;
   if (!serviceOnline.value || !modelReady.value) {
     assistantReply.value = serviceOnline.value
-      ? '本地 Agent 服务已经接通，但还没有配置模型 API。请在项目环境变量中配置 COZE_WORKLOAD_IDENTITY_API_KEY 和 COZE_INTEGRATION_MODEL_BASE_URL，随后重启 Agent。'
+      ? '本地 Agent 服务已经接通，但还没有配置模型 API。请在项目环境变量中配置 OPENAI_API_KEY 和 OPENAI_BASE_URL，随后重启 Agent。'
       : '当前无法连接本地 Agent。请确认一键部署中的 agent 服务已经启动。';
     ElMessage.warning(!serviceOnline.value ? 'AI Agent 未连接' : '大模型尚未配置');
     return;

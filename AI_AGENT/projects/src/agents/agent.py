@@ -5,6 +5,10 @@
 2. 学情分析 - 维护学生学情档案
 3. 学情检测 - 智能组卷和强化测试
 4. 办学助手 - 解答学生问题
+
+主线程数据库查询架构：
+- pre_query_node 在 Agent 处理前直接从 MySQL 查询数据
+- 查询结果作为 SystemMessage 注入，Agent 无需工具调用即可获得数据
 """
 import os
 import json
@@ -15,6 +19,9 @@ from langgraph.graph.message import add_messages
 from langchain_core.messages import AnyMessage
 from storage.memory.memory_saver import get_memory_saver
 from models.model_manager import ModelManager
+
+# 预查询辅助模块（主线程数据库查询）
+from agents.pre_query_helper import wrap_agent_with_pre_query
 
 # 导入工具
 from tools.exam_analysis_tool import analyze_exam_paper, get_student_weak_points
@@ -32,6 +39,15 @@ from tools.exam_recorder_tool import (
     add_questions_to_database,
     record_exam_result,
     get_question_bank
+)
+from tools.mysql_query_tools import (
+    query_student_learning_context,
+    query_recent_exam_scores,
+    query_score_summary,
+    query_exam_count,
+    query_exam_status_breakdown,
+    query_question_accuracy,
+    query_knowledge_status,
 )
 
 # 默认保留最近 20 轮对话 (40 条消息)
@@ -89,20 +105,25 @@ def build_agent(use_local: bool = False, ctx=None):
     
     # 定义所有可用工具
     tools = [
+        # MySQL 数据库查询工具（主线程，直接从 WebBE 数据库查询真实考试数据）
+        query_student_learning_context,
+        query_recent_exam_scores,
+        query_score_summary,
+        query_exam_count,
+        query_exam_status_breakdown,
+        query_question_accuracy,
+        query_knowledge_status,
         # 考试分析工具
         analyze_exam_paper,
         get_student_weak_points,
-        
         # 学情管理工具
         create_student_profile,
         update_learning_profile,
         get_student_learning_profile,
         get_knowledge_progress,
-        
         # 组卷工具
         generate_intelligent_paper,
         generate_enhanced_paper_by_weak_points,
-        
         # 试卷入库工具
         add_questions_to_database,
         record_exam_result,
@@ -113,49 +134,53 @@ def build_agent(use_local: bool = False, ctx=None):
     system_prompt = """# 角色定义
 你是麒麟系统教育平台的智能助教，是一个集成多功能的AI助手，能够为学生提供全面的学习支持。
 
+# 主线程数据获取机制
+系统已在后台自动从 MySQL 数据库查询了学生的考试数据。当你看到消息中有
+【数据库查询结果 - 主线程直接查询】标记时，说明真实数据已经注入到对话中。
+请直接使用这些数据进行分析，无需再次调用数据库查询工具。
+
 # 核心功能模块
 你拥有以下四大核心功能模块，根据用户的需求自动选择合适的模块：
 
 ## 1. 考试分析模块
 当用户请求分析试卷、查看薄弱点、分析考试表现时，使用此模块。
-- 分析学生的试卷和答题情况
-- 识别薄弱知识点
-- 统计错误率
-- 生成详细的分析报告
-**使用工具**：analyze_exam_paper, get_student_weak_points
+- **数据已在对话中提供**，直接使用【数据库查询结果】中的数据进行分析
+- 如需创建用户档案，使用 create_student_profile
+- 如需更新学情记录，使用 update_learning_profile
+- 如需深度分析，使用 analyze_exam_paper 和 get_student_weak_points
 
 ## 2. 学情分析模块
 当用户请求创建学生档案、查看学情、更新学习记录时，使用此模块。
-- 创建学生档案
-- 维护学情记录（薄弱点、已掌握点）
-- 查看学习进度
-- 更新知识点掌握程度
-**使用工具**：create_student_profile, update_learning_profile, get_student_learning_profile, get_knowledge_progress
+- **数据已在对话中提供**，直接使用【数据库查询结果】中的数据
+- 使用 create_student_profile、update_learning_profile 管理档案
+- 使用 get_student_learning_profile、get_knowledge_progress 查看进度
 
 ## 3. 学情检测模块
 当用户请求生成试卷、进行测试、强化训练时，使用此模块。
-- 智能组卷（根据课程内容）
-- 强化测试（针对薄弱点）
-- 难度适配
-**使用工具**：generate_intelligent_paper, generate_enhanced_paper_by_weak_points, get_question_bank
+- 使用 generate_intelligent_paper 智能组卷
+- 使用 generate_enhanced_paper_by_weak_points 强化测试
+- 使用 get_question_bank 查看题库
 
 ## 4. 办学助手模块（默认模块）
-当用户提出关于麒麟系统的学习问题、概念询问、技术答疑时，使用此模块。
-- 解答学习问题
-- 解释核心概念
-- 提供实践指导
-- 给出学习建议
-**直接回答，无需工具**
+当用户提出学习问题、概念询问、技术答疑时，使用此模块。
+- 直接回答，无需工具
 
 # 工作流程
-1. **理解用户意图**：分析用户的请求，确定需要使用哪个功能模块
-2. **选择合适工具**：根据模块功能，选择对应的工具（如需）
-3. **执行操作**：调用工具获取数据或执行操作
-4. **生成回复**：基于工具结果或直接知识，生成专业、清晰的回复
+1. **检查数据**：首先查看消息中是否有【数据库查询结果 - 主线程直接查询】，这些是系统已为你查询好的真实数据
+2. **理解用户意图**：分析用户的请求，确定需要使用哪个功能模块
+3. **使用数据**：直接基于已注入的数据进行分析，不要凭空编造
+4. **选择工具**：仅在需要额外操作（如创建档案、生成试卷）时调用工具
+5. **生成回复**：基于真实数据，生成专业、清晰的回复
+
+# 重要规则
+- **考试分析、学情分析的数据已由系统主线程自动查询并注入，直接使用即可**
+- 不要重复调用数据库查询工具（数据已在对话中）
+- 当用户没有提供 user_id 时，系统会自动提示用户
+- 分析必须基于真实数据，不能凭空编造
 
 # 功能识别规则
-- 关键词"分析"、"试卷"、"薄弱点"、"错题" → 考试分析模块
-- 关键词"档案"、"学情"、"记录"、"进度" → 学情分析模块
+- 关键词"分析"、"试卷"、"薄弱点"、"错题"、"考试" → 考试分析模块
+- 关键词"档案"、"学情"、"记录"、"进度"、"学习档案" → 学情分析模块
 - 关键词"试卷"、"测试"、"组卷"、"强化" → 学情检测模块
 - 其他学习问题 → 办学助手模块
 
@@ -172,28 +197,25 @@ def build_agent(use_local: bool = False, ctx=None):
 - 解答要准确、清晰、易懂
 - 当不确定答案时，要诚实说明并建议查阅资料
 
-# 示例对话
-用户："帮我分析一下这次麒麟系统考试的薄弱点"
-→ 使用考试分析模块，调用 analyze_exam_paper 工具
-
-用户："帮我生成一份关于进程管理的强化测试卷"
-→ 使用学情检测模块，调用 generate_intelligent_paper 工具
-
-用户："什么是麒麟系统的微内核架构？"
-→ 使用办学助手模块，直接解答
-
 现在，请根据用户的需求，选择合适的功能模块并提供建议。"""
     
     # 将配置中的 sp 与我们的系统提示词结合
     if cfg.get("sp"):
         system_prompt = cfg.get("sp") + "\n\n" + system_prompt
     
-    return create_agent(
+    # 构建内部 Agent
+    inner_agent = create_agent(
         model=llm,
         system_prompt=system_prompt,
         tools=tools,
-        checkpointer=get_memory_saver(),
         state_schema=AgentState,
+    )
+    
+    # 包装预查询工作流（主线程数据库查询 → Agent 处理）
+    return wrap_agent_with_pre_query(
+        inner_agent=inner_agent,
+        state_schema=AgentState,
+        checkpointer=get_memory_saver(),
     )
 
 def get_agent_by_request(request: str, use_local: bool = False):

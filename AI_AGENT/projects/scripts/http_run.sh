@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# 项目根目录（与 systemd 中 COZE_WORKSPACE_PATH 一致，通常为 INSTALL_PREFIX/ai-agent）
-WORK_DIR="${COZE_WORKSPACE_PATH:-.}"
+# 项目根目录
+WORK_DIR="${WORKSPACE_PATH:-.}"
 PORT=8000
 VENV_PY="${WORK_DIR}/.venv/bin/python"
 

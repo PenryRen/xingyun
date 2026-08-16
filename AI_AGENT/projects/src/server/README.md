@@ -41,10 +41,6 @@ pip install -r requirements.txt
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_BASE_URL=https://api.openai.com/v1
 MODEL_NAME=gpt-4o-mini
-
-# 或 Coze 平台配置（备选）
-COZE_WORKLOAD_IDENTITY_API_KEY=your_coze_api_key
-COZE_INTEGRATION_MODEL_BASE_URL=your_coze_base_url
 ```
 
 ### 3. 启动服务
@@ -452,7 +448,7 @@ public class AIAgentClient {
 
 ## 注意事项
 
-1. **环境变量**：确保正确配置 OpenAI API 密钥或 Coze 平台密钥
+1. **环境变量**：确保正确配置 OpenAI API 密钥
 2. **网络连接**：远程模型需要稳定的网络连接
 3. **会话管理**：session_id 用于保持对话上下文，建议按用户分配
 4. **超时设置**：默认超时时间为 600 秒，长对话可能需要更长时间

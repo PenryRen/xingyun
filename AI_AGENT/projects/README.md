@@ -206,11 +206,11 @@ XINGYUN_MYSQL_PASSWORD=your_mysql_password
 XINGYUN_MYSQL_AUTO_CREATE_AI_SCHEMA=true
 
 # 豆包大模型配置
-COZE_WORKLOAD_IDENTITY_API_KEY=your_api_key
-COZE_INTEGRATION_MODEL_BASE_URL=https://your-model-base-url.com
+OPENAI_API_KEY=your_api_key
+OPENAI_BASE_URL=https://your-model-base-url.com
 
 # 工作目录
-COZE_WORKSPACE_PATH=/path/to/your/project
+WORKSPACE_PATH=/path/to/your/project
 ```
 
 #### 配置 MySQL 凭证

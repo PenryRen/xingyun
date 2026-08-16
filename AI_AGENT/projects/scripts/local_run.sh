@@ -6,7 +6,7 @@ mode=""
 node=""
 input=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORK_DIR="${COZE_WORKSPACE_PATH:-$(dirname "$SCRIPT_DIR")}"
+WORK_DIR="${WORKSPACE_PATH:-$(dirname "$SCRIPT_DIR")}"
 
 usage() {
   echo "用法: $0 -m <模式> [-n <节点ID>] [-i <输入JSON>]"

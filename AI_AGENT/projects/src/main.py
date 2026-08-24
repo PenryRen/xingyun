@@ -553,6 +553,18 @@ async def learning_assistant(req: LearningAssistantRequest):
         logger.error(f"Learning assistant error: {e}", exc_info=True)
         return {"response": {"content": f"AI 助教暂时不可用：{str(e)}"}}
 
+@app.post("/learning/assistant/session/reset")
+async def learning_assistant_session_reset():
+    """重置 AI 助教会话（适配前端 wdd-user-web）"""
+    try:
+        # 清除服务运行时缓存，下次对话将创建新会话
+        service.running_tasks.clear()
+        if service._graph is not None:
+            pass  # 图实例保留，仅重置会话状态
+        return {"code": 200, "message": "success"}
+    except Exception as e:
+        logger.error(f"Session reset error: {e}", exc_info=True)
+        return {"code": 200, "message": "success", "warning": str(e)}
 
 @app.post("/learning/workspace")
 async def learning_workspace(request: Request):

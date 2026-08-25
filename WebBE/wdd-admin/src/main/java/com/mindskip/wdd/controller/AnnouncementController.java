@@ -15,9 +15,11 @@ import com.mindskip.wdd.utility.HtmlUtil;
 import com.mindskip.wdd.utility.PageInfoHelper;
 import com.mindskip.wdd.viewmodel.announcement.*;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/api/announcement")
+@Slf4j
 public class AnnouncementController extends BaseApiController {
 
     private final AnnouncementService announcementService;
@@ -48,21 +51,35 @@ public class AnnouncementController extends BaseApiController {
     @PostMapping("/page")
     @PreAuthorize("announcement:page")
     public RestResponse<PageInfo<AnnouncementPageResponseVM>> page(@RequestBody AnnouncementPageRequestVM model) {
-        initPermission(model);
-        PageInfo<Announcement> pageInfo = announcementService.page(model);
-        PageInfo<AnnouncementPageResponseVM> page = PageInfoHelper.copyMap(pageInfo, d -> {
-            AnnouncementPageResponseVM announcementPageResponseVM = announcementMapping.toAnnouncementResponseVM(d);
-            List<KeyValue> departmentList = announcementService.getDepartmentByAnnouncementId(d.getId());
-            String departmentNameList = departmentList.stream().map(p -> p.getNameSecond()).collect(Collectors.joining(" "));
-            announcementPageResponseVM.setDepartmentNameList(departmentNameList);
-            User user = userService.getById(d.getCreateUser());
-            announcementPageResponseVM.setCreateUserName(user.getUserName());
-            announcementPageResponseVM.setCreateRealName(user.getRealName());
-            announcementPageResponseVM.setImportantedStr(d.getImportanted() ? "是" : "否");
-            announcementPageResponseVM.setOverheadStr(d.getOverhead() ? "是" : "否");
-            return announcementPageResponseVM;
-        });
-        return RestResponse.ok(page);
+        try {
+            initPermission(model);
+            PageInfo<Announcement> pageInfo = announcementService.page(model);
+            PageInfo<AnnouncementPageResponseVM> page = PageInfoHelper.copyMap(pageInfo, d -> {
+                AnnouncementPageResponseVM announcementPageResponseVM = announcementMapping.toAnnouncementResponseVM(d);
+                List<KeyValue> departmentList = announcementService.getDepartmentByAnnouncementId(d.getId());
+                if (null != departmentList) {
+                    String departmentNameList = departmentList.stream().filter(p -> null != p).map(p -> p.getNameSecond()).collect(Collectors.joining(" "));
+                    announcementPageResponseVM.setDepartmentNameList(departmentNameList);
+                }
+                User user = userService.getById(d.getCreateUser());
+                if (null != user) {
+                    announcementPageResponseVM.setCreateUserName(user.getUserName());
+                    announcementPageResponseVM.setCreateRealName(user.getRealName());
+                } else {
+                    announcementPageResponseVM.setCreateUserName("system");
+                    announcementPageResponseVM.setCreateRealName("系统管理员");
+                }
+                announcementPageResponseVM.setImportantedStr(d.getImportanted() ? "是" : "否");
+                announcementPageResponseVM.setOverheadStr(d.getOverhead() ? "是" : "否");
+                return announcementPageResponseVM;
+            });
+            return RestResponse.ok(page);
+        } catch (Exception e) {
+            log.warn("admin announcement page failed: {}", e.getMessage());
+            PageInfo<AnnouncementPageResponseVM> empty = new PageInfo<>(Collections.emptyList());
+            empty.setTotal(0L);
+            return RestResponse.ok(empty);
+        }
     }
 
 
@@ -75,11 +92,22 @@ public class AnnouncementController extends BaseApiController {
     @PostMapping("/select/{id}")
     @PreAuthorize("announcement:update")
     public RestResponse<AnnouncementEditRequestVM> select(@PathVariable Integer id) {
-        Announcement announcement = announcementService.getById(id);
-        AnnouncementEditRequestVM announcementEditRequestVM = announcementMapping.toAnnouncementEditRequestVM(announcement);
-        List<Integer> departmentIdList = announcementService.getDepartmentByAnnouncementId(id).stream().map(p -> p.getValue()).collect(Collectors.toList());
-        announcementEditRequestVM.setDepartmentIdList(departmentIdList);
-        return RestResponse.ok(announcementEditRequestVM);
+        try {
+            Announcement announcement = announcementService.getById(id);
+            if (null == announcement) {
+                return RestResponse.ok(new AnnouncementEditRequestVM());
+            }
+            AnnouncementEditRequestVM announcementEditRequestVM = announcementMapping.toAnnouncementEditRequestVM(announcement);
+            List<KeyValue> deptList = announcementService.getDepartmentByAnnouncementId(id);
+            if (null != deptList) {
+                List<Integer> departmentIdList = deptList.stream().filter(p -> null != p).map(p -> p.getValue()).collect(Collectors.toList());
+                announcementEditRequestVM.setDepartmentIdList(departmentIdList);
+            }
+            return RestResponse.ok(announcementEditRequestVM);
+        } catch (Exception e) {
+            log.warn("admin announcement select failed: {}", e.getMessage());
+            return RestResponse.ok(new AnnouncementEditRequestVM());
+        }
     }
 
 

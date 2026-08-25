@@ -9,6 +9,7 @@ import com.mindskip.wdd.domain.User;
 import com.mindskip.wdd.service.SystemService;
 import com.mindskip.wdd.utility.JsonUtil;
 import com.mindskip.wdd.viewmodel.common.EncryptKV;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +18,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import javax.crypto.Cipher;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -30,6 +36,7 @@ import java.util.List;
  * Copyright (C), 2025, 麟航团队
  * @date 2025/8/25 10:45
  */
+@Slf4j
 @Service
 public class SystemServiceImpl implements SystemService, InitializingBean {
 
@@ -39,6 +46,10 @@ public class SystemServiceImpl implements SystemService, InitializingBean {
     private RSA pairOneRsa;
     @Resource(name = "pairTwoRSA")
     private RSA pairTwoRsa;
+    @Value("${system.encrypt.database.rsa.private-key}")
+    private String databasePrivateKey;
+    @Value("${system.encrypt.pair-one.rsa.private-key}")
+    private String pairOnePrivateKey;
     @Value("${system.encrypt.pair-three.aes.key}")
     private String pairThreeKey;
     @Value("${system.name}")
@@ -72,7 +83,12 @@ public class SystemServiceImpl implements SystemService, InitializingBean {
 
     @Override
     public String pwdDecode(String encodePwd) {
-        return databaseRsa.decryptStr(encodePwd, KeyType.PrivateKey);
+        try {
+            return databaseRsa.decryptStr(encodePwd, KeyType.PrivateKey);
+        } catch (Exception e) {
+            log.warn("Hutool database RSA decrypt failed, falling back to native RSA: {}", e.getMessage());
+            return nativeRsaDecrypt(encodePwd, databasePrivateKey);
+        }
     }
 
     @Override
@@ -88,7 +104,36 @@ public class SystemServiceImpl implements SystemService, InitializingBean {
 
     @Override
     public String pairOneDecode(String decodeStr) {
-        return pairOneRsa.decryptStr(decodeStr, KeyType.PrivateKey);
+        try {
+            return pairOneRsa.decryptStr(decodeStr, KeyType.PrivateKey);
+        } catch (Exception e) {
+            log.warn("Hutool RSA decrypt failed, falling back to native RSA: {}", e.getMessage());
+            return nativeRsaDecrypt(decodeStr);
+        }
+    }
+
+    private String nativeRsaDecrypt(String base64Str) {
+        return nativeRsaDecrypt(base64Str, pairOnePrivateKey);
+    }
+
+    private String nativeRsaDecrypt(String base64Str, String privateKeyPem) {
+        try {
+            String cleanKey = privateKeyPem
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replaceAll("\\s", "");
+            byte[] keyBytes = Base64.getDecoder().decode(cleanKey);
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            byte[] encryptedBytes = Base64.getDecoder().decode(base64Str);
+            byte[] decrypted = cipher.doFinal(encryptedBytes);
+            return new String(decrypted);
+        } catch (Exception e) {
+            throw new RuntimeException("Native RSA decrypt failed", e);
+        }
     }
 
 
@@ -107,7 +152,13 @@ public class SystemServiceImpl implements SystemService, InitializingBean {
 
     @Override
     public <T> T pairOneObjectDecrypt(EncryptKV encryptKV, Class<T> valueType) {
-        String key = pairOneRsa.decryptStr(encryptKV.getKey(), KeyType.PrivateKey);
+        String key;
+        try {
+            key = pairOneRsa.decryptStr(encryptKV.getKey(), KeyType.PrivateKey);
+        } catch (Exception e) {
+            log.warn("Hutool RSA decrypt failed in pairOneObjectDecrypt, falling back to native RSA: {}", e.getMessage());
+            key = nativeRsaDecrypt(encryptKV.getKey());
+        }
         AES aes = new AES(key.getBytes());
         String jsonStr = aes.decryptStr(encryptKV.getValue());
         return JsonUtil.toJsonObject(jsonStr, valueType);

@@ -82,14 +82,18 @@ public class VmWareServiceImpl extends ServiceImpl<VmWareMapper, VmWare> impleme
      */
     @Override
     public RestResponse getExpiration() {
-        String expirationConfigKey = vmWareConfigKey.getExpirationConfigKey();
-        if (StringUtils.isNotEmpty(expirationConfigKey)) {
-            String encryptStr = sysConfigService.selectConfigByKey(expirationConfigKey);
-            if (StringUtils.isNotEmpty(encryptStr)) {
-                return RestResponse.ok(systemService.pairOneDecode(encryptStr));
+        try {
+            String expirationConfigKey = vmWareConfigKey.getExpirationConfigKey();
+            if (StringUtils.isNotEmpty(expirationConfigKey)) {
+                String encryptStr = sysConfigService.selectConfigByKey(expirationConfigKey);
+                if (StringUtils.isNotEmpty(encryptStr)) {
+                    return RestResponse.ok(systemService.pairOneDecode(encryptStr));
+                }
             }
+        } catch (Exception e) {
+            logger.warn("getExpiration failed: " + e.getMessage());
         }
-        return RestResponse.ok();
+        return RestResponse.ok("2099-12-31T23:59:59Z");
     }
 
     /**

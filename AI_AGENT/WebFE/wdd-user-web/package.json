@@ -8,6 +8,7 @@
     "serve": "vite serve --mode development",
     "build": "vue-tsc --noEmit && vite build --mode production",
     "lint": "eslint src/**/*.{ts,js,vue} --fix",
+    "preview": "vite preview",
     "prettier": "prettier --write ."
   },
   "dependencies": {

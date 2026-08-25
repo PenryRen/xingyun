@@ -71,10 +71,11 @@ def build_agent(use_local: bool = False, ctx=None):
         use_local: 是否使用本地模型
         ctx: 上下文信息（可选）
     """
-    workspace_path = os.getenv("WORKSPACE_PATH", os.getcwd())
+    # 优先使用 PROJECT_ROOT（由 main.py 注入），不依赖 WORKSPACE_PATH（可能为相对路径）
+    project_root = os.getenv("PROJECT_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
     # 使用默认配置（办学助手作为默认模式）
-    config_path = os.path.join(workspace_path, "config/teaching_assistant_config.json")
+    config_path = os.path.join(project_root, "config", "teaching_assistant_config.json")
     
     if os.path.exists(config_path):
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -87,6 +88,11 @@ def build_agent(use_local: bool = False, ctx=None):
         model_name = None
         temperature = 0.7
         timeout = 600
+
+    # 环境变量 MODEL_NAME 优先级高于配置文件
+    env_model_name = os.getenv("MODEL_NAME")
+    if env_model_name:
+        model_name = env_model_name
     
     # 使用模型管理器初始化模型
     llm = ModelManager.get_llm(

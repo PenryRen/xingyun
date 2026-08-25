@@ -38,9 +38,9 @@ server:
   port: 16000
   undertow:
     threads:
-      io: 4
-      worker: 16
-    buffer-size: 1024
+      io: 2
+      worker: 8
+    buffer-size: 512
     direct-buffers: true
   compression:
     enabled: true
@@ -89,7 +89,7 @@ spring:
       time-to-live: 12h   #12 hour
   profiles:
 #    active:  prod
-    active:  dev
+    active:  ${SPRING_PROFILES_ACTIVE:dev}
 
 vm-ware:
   config-key:

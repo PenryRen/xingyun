@@ -14,11 +14,17 @@ from typing import Any, Dict, Iterable, AsyncIterable, AsyncGenerator, Optional
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # 本地部署：优先加载项目根目录的 .env
+# __file__ 位于 projects/src/main.py，因此项目根目录为上一级
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 try:
     from dotenv import load_dotenv
-    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
+    load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 except ImportError:
     pass
+
+# 将项目根目录注入到环境变量，供后续代码使用
+os.environ.setdefault("PROJECT_ROOT", _PROJECT_ROOT)
 
 import uvicorn
 import time
@@ -402,8 +408,9 @@ async def health_check(force: bool = False):
         api_key = os.getenv("OPENAI_API_KEY")
         base_url = os.getenv("OPENAI_BASE_URL")
 
-        workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
-        config_path = os.path.join(workspace_path, "config/teaching_assistant_config.json")
+        # 优先使用 PROJECT_ROOT（代码所在项目根目录），不依赖 WORKSPACE_PATH（可能为相对路径）
+        project_root = os.getenv("PROJECT_ROOT") or _PROJECT_ROOT
+        config_path = os.path.join(project_root, "config", "teaching_assistant_config.json")
         model_name = None
         if os.path.exists(config_path):
             try:
@@ -412,8 +419,10 @@ async def health_check(force: bool = False):
                 model_name = (cfg.get("config") or {}).get("model")
             except Exception:
                 pass
-        if not model_name:
-            model_name = os.getenv("MODEL_NAME")
+        # 环境变量 MODEL_NAME 优先级高于配置文件
+        env_model_name = os.getenv("MODEL_NAME")
+        if env_model_name:
+            model_name = env_model_name
 
         configured = bool(api_key and base_url and model_name)
         result["model_configured"] = configured
@@ -552,6 +561,20 @@ async def learning_assistant(req: LearningAssistantRequest):
     except Exception as e:
         logger.error(f"Learning assistant error: {e}", exc_info=True)
         return {"response": {"content": f"AI 助教暂时不可用：{str(e)}"}}
+
+
+@app.post("/learning/assistant/session/reset")
+async def learning_assistant_session_reset():
+    """重置 AI 助教会话（适配前端 wdd-user-web）"""
+    try:
+        # 清除服务运行时缓存，下次对话将创建新会话
+        service.running_tasks.clear()
+        if service._graph is not None:
+            pass  # 图实例保留，仅重置会话状态
+        return {"code": 200, "message": "success"}
+    except Exception as e:
+        logger.error(f"Session reset error: {e}", exc_info=True)
+        return {"code": 200, "message": "success", "warning": str(e)}
 
 
 @app.post("/learning/workspace")

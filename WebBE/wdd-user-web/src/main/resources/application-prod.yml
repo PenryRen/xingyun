@@ -1,48 +1,14 @@
-#system:
-#  resource:
-#    #本地存储，配合nginx使用
-#    local-store: true
-#    file:
-#      location: /app/course/resource/web-file
-##      url: http://177.17.100.40:6003/ueupload/
-#      url: http://jyptad.ueweixin.com/ueupload/
-#    #违禁词过滤
-#    stop-word-path: /app/course/resource/stop-word
-#    stop-word-enabled: false
-#  # token配置
-#  token:
-#    # 账户单点登录（true单点登录 false多终端登录）
-#    soloLogin: false
-#
-#logging:
-#  file:
-#    path: ./log/ueit-user-web
-#
-#spring:
-#  servlet:
-#    multipart:
-#      location: /app/course/resource/servlet
-#  redis:
-#    host: 192.168.1.228
-#    database: 1
-#  datasource:
-#    url: jdbc:mysql://192.168.1.228:3306/wdd?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true
-#    username: root
-#    password: ueit111111
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-
 system:
   resource:
-    #本地存储，配合nginx使用
-    # 须与 nginx「location /ueupload/」的 alias 一致：${INSTALL_PREFIX}/resource/web-file（install.sh 默认 INSTALL_PREFIX=/opt/linhang）
+    # 本地存储，配合 nginx 使用
     local-store: true
     file:
-      location: /opt/linhang/resource/web-file
+      location: /opt/Xingyun/resource/web-file
       url: /ueupload
-    #违禁词过滤
-    stop-word-path: /opt/linhang/resource/stop-word
+    # 违禁词过滤
+    stop-word-path: /opt/Xingyun/resource/stop-word
     stop-word-enabled: false
-  # token配置
+  # token 配置
   token:
     # 账户单点登录（true单点登录 false多终端登录）
     soloLogin: false
@@ -54,14 +20,31 @@ logging:
 spring:
   servlet:
     multipart:
-      location: /opt/linhang/resource/servlet
+      location: /opt/Xingyun/resource/servlet
+  # 生产环境 Redis：支持通过环境变量覆盖
   redis:
-    host: 127.0.0.1
-    port: 6379
-    password: redis123
-    database: 1
+    host: ${REDIS_HOST:127.0.0.1}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DB:1}
+    timeout: 10000
+    lettuce:
+      pool:
+        # 2G 内存：调小连接池
+        max-active: 4
+        max-wait: 3000
+        max-idle: 2
+        min-idle: 0
+  # 生产环境数据源：支持通过环境变量覆盖
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/wdd?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true
-    username: wdd
-    password: wdd123
+    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/wdd?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # 2G 内存：调小连接池，避免 OOM
+      idle-timeout: 300000      # 5 min
+      max-lifetime: 1200000     # 20 min
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 10000

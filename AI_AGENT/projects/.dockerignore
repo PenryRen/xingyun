@@ -1,0 +1,29 @@
+# Python 缓存与虚拟环境
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# 环境变量文件（通过 docker run -e 或 --env-file 注入）
+.env
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# 测试
+tests/
+
+# 文档（体积大，不影响运行）
+README.md
+README_DEVELOPMENT.md
+MYSQL_DATABASE_MIGRATION.md
+MYSQL_QUERY_MODULE.md
+
+# Coze 配置（本地开发用）
+.coze

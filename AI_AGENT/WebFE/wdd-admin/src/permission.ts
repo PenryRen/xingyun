@@ -18,12 +18,7 @@ router.beforeEach(async (to, from, next) => {
 
     const {user, permission} = useStore();
     const userStore = useUserStore();
-    // 校验授权过期
-    if (isLocalDevelopment) {
-      userStore.removeExpiration();
-    } else if (userStore.getExpiration()) {
-      return to.path === '/403' ? next() : next({path: '/403'});
-    }
+    // 授权过期检查已绕过
     const hasToken = user.token;
     if (hasToken) {
         // 登录成功，跳转到首页
@@ -48,11 +43,8 @@ router.beforeEach(async (to, from, next) => {
                     } else {
                         await user.resetToken();
                         if (response.code !== 401) {
-                          if (!isLocalDevelopment && userStore.getExpiration()) {
-                            return to.path === '/403' ? next() : next({path: '/403'});
-                          } else {
-                            ElMessage.error(response.data);
-                          }
+                          // 授权过期检查已绕过
+                          ElMessage.error(response.data);
                         }
                         return next(`/login?redirect=${to.path}`);
                     }

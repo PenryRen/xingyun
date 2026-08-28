@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.TVmwareMapper">
+
+    <resultMap type="VmWare" id="VmWareResult">
+        <result property="id"    column="id"    />
+        <result property="vmType"    column="vm_type"    />
+        <result property="guid"    column="guid"    />
+        <result property="vmParentId"    column="vm_parent_id"    />
+        <result property="vmName"    column="vm_name"    />
+        <result property="vmPassword"    column="vm_password"    />
+        <result property="vmIp"    column="vm_ip"    />
+        <result property="vmCpu"    column="vm_cpu"    />
+        <result property="vmStorage"    column="vm_storage"    />
+        <result property="diskName"    column="disk_name"    />
+        <result property="diskSize"    column="disk_size"    />
+        <result property="vmUserId"    column="vm_user_id"    />
+        <result property="url"    column="url"    />
+        <result property="status"    column="status"    />
+        <result property="classes"    column="classes"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="createUser"    column="create_user"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="updateUser"    column="update_user"    />
+        <result property="validCreateTime"    column="valid_create_time"    />
+        <result property="validEndTime"    column="valid_end_time"    />
+        <result property="disabled"    column="disabled"    />
+        <result property="examPaperId"    column="exam_paper_id"    />
+        <result property="deleted"    column="deleted"    />
+    </resultMap>
+
+    <sql id="selectVmWareVo">
+        select id, vm_type, guid, vm_parent_id, vm_name, vm_password, vm_ip, vm_cpu, vm_storage, disk_name, disk_size, vm_user_id, url, status, classes, create_time, create_user, update_time, update_user, valid_create_time, valid_end_time, disabled, exam_paper_id, deleted from t_vmware
+    </sql>
+
+    <update id="updatewar">
+        update wdd.t_vmware set status=#{status} where id=#{id}
+    </update>
+
+    <delete id="deleteware">
+        delete from wdd.t_vmware where guid=#{guid}
+    </delete>
+    <select id="vmwarList" resultMap="VmWareResult" parameterType="VmWare">
+        select * from wdd.t_vmware
+        <where>
+            <if test="vmName != null and vmName !=''">
+                vm_name LIKE CONCAT('%', #{vmName}, '%')
+            </if>
+            <if test="vmType != null and vmType !=''">
+                and vm_type = #{vmType}
+            </if>
+            <if test="status != null and status !=''">
+                and status = #{status}
+            </if>
+            <if test="classes != null and classes !=''">
+                and classes = #{classes}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectexam" resultMap="VmWareResult">
+        select * from wdd.t_vmware where vm_user_id=#{guid} and classes=#{type}
+    </select>
+    <select id="userByName" resultType="java.lang.String">
+        select user_uuid from wdd.t_user where user_name=#{userName}
+    </select>
+
+</mapper>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ExamPaperAnswerErrorMapper">
+
+    <resultMap type="ExamPaperAnswerError" id="ExamPaperAnswerErrorResult">
+        <result property="id"    column="id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="vmGuid"    column="vm_guid"    />
+        <result property="vmParentId"    column="vm_parent_id"    />
+        <result property="examPaperId"    column="exam_paper_id"    />
+        <result property="answerId"    column="answer_id"    />
+        <result property="answerFrameId"    column="answer_frame_id"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="status"    column="status"    />
+        <result property="errorMsg"    column="error_msg"    />
+        <result property="deleted"    column="deleted"    />
+    </resultMap>
+
+    <sql id="selectExamPaperAnswerErrorVo">
+        select id, user_id, vm_guid, vm_parent_id, exam_paper_id, answer_id, answer_frame_id, create_time, update_time, status, error_msg, deleted from t_exam_paper_answer_error
+    </sql>
+
+    <select id="selectExamPaperAnswerErrorList" parameterType="ExamPaperAnswerError" resultMap="ExamPaperAnswerErrorResult">
+        <include refid="selectExamPaperAnswerErrorVo"/>
+        <where>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="vmGuid != null  and vmGuid != ''"> and vm_guid = #{vmGuid}</if>
+            <if test="vmParentId != null  and vmParentId != ''"> and vm_parent_id = #{vmParentId}</if>
+            <if test="examPaperId != null "> and exam_paper_id = #{examPaperId}</if>
+            <if test="answerId != null "> and answer_id = #{answerId}</if>
+            <if test="answerFrameId != null  and answerFrameId != ''"> and answer_frame_id = #{answerFrameId}</if>
+            <if test="status != null "> and status = #{status}</if>
+            <if test="errorMsg != null  and errorMsg != ''"> and error_msg = #{errorMsg}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+            <if test="deleted == null "> and (deleted = 0 or deleted is null)</if>
+        </where>
+    </select>
+
+    <select id="selectExamPaperAnswerErrorById" parameterType="Long" resultMap="ExamPaperAnswerErrorResult">
+        <include refid="selectExamPaperAnswerErrorVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertExamPaperAnswerError" parameterType="ExamPaperAnswerError" useGeneratedKeys="true" keyProperty="id">
+        insert into t_exam_paper_answer_error
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="vmGuid != null">vm_guid,</if>
+            <if test="vmParentId != null">vm_parent_id,</if>
+            <if test="examPaperId != null">exam_paper_id,</if>
+            <if test="answerId != null">answer_id,</if>
+            <if test="answerFrameId != null">answer_frame_id,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="status != null">status,</if>
+            <if test="errorMsg != null">error_msg,</if>
+            <if test="deleted != null">deleted,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="vmGuid != null">#{vmGuid},</if>
+            <if test="vmParentId != null">#{vmParentId},</if>
+            <if test="examPaperId != null">#{examPaperId},</if>
+            <if test="answerId != null">#{answerId},</if>
+            <if test="answerFrameId != null">#{answerFrameId},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="status != null">#{status},</if>
+            <if test="errorMsg != null">#{errorMsg},</if>
+            <if test="deleted != null">#{deleted},</if>
+        </trim>
+    </insert>
+
+    <update id="updateExamPaperAnswerError" parameterType="ExamPaperAnswerError">
+        update t_exam_paper_answer_error
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="vmGuid != null">vm_guid = #{vmGuid},</if>
+            <if test="vmParentId != null">vm_parent_id = #{vmParentId},</if>
+            <if test="examPaperId != null">exam_paper_id = #{examPaperId},</if>
+            <if test="answerId != null">answer_id = #{answerId},</if>
+            <if test="answerFrameId != null">answer_frame_id = #{answerFrameId},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="deleteExamPaperAnswerErrorById" parameterType="Long">
+        update t_exam_paper_answer_error set deleted = 1 where id = #{id}
+    </update>
+
+    <update id="deleteExamPaperAnswerErrorByIds" parameterType="String">
+        update t_exam_paper_answer_error set deleted = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!--<delete id="deleteExamPaperAnswerErrorById" parameterType="Long">
+        delete from t_exam_paper_answer_error where id = #{id}
+    </delete>
+
+    <delete id="deleteExamPaperAnswerErrorByIds" parameterType="String">
+        delete from t_exam_paper_answer_error where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>-->
+</mapper>

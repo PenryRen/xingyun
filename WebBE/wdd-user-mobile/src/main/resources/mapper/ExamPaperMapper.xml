@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ExamPaperMapper">
+
+  <select id="page" resultType="com.mindskip.wdd.domain.ExamPaper" parameterType="com.mindskip.wdd.viewmodel.exam.paper.ExamPaperPageRequestVM">
+    SELECT  ep.* FROM t_exam_paper ep
+    LEFT JOIN t_exam_paper_user epu on ep.id = epu.exam_paper_id
+    LEFT JOIN t_exam_paper_department epd on ep.id=epd.exam_paper_id
+    <where>
+      and ep.deleted= 0 and  #{now} &lt;= ep.limit_end_time
+      and ( (epu.deleted = 0 and epu.exam_paper_answer_id is null and epu.user_id = #{userId} ) or (epd.deleted = 0 and epd.department_id=#{departmentId}))
+      and not exists (select 1 from t_exam_paper_answer epa where ep.id = epa.exam_paper_id and epa.create_user = #{userId})
+    </where>
+  </select>
+
+
+
+  <select id="resitPage" resultType="com.mindskip.wdd.domain.ExamPaper" parameterType="com.mindskip.wdd.viewmodel.exam.paper.ExamPaperPageRequestVM">
+    SELECT epu.limit_start_time ,epu.limit_end_time , ep.*  FROM t_exam_paper ep
+    LEFT JOIN t_exam_paper_user epu on ep.id = epu.exam_paper_id
+    <where>
+      and ep.deleted= 0
+      and epu.exam_paper_answer_id is not null and epu.deleted = 0 and epu.user_id = #{userId} and  #{now} &lt;= epu.limit_end_time
+      and not exists (select 1 from t_exam_paper_answer epa where ep.id = epa.exam_paper_id and epa.deleted= 0 and epa.create_user = #{userId})
+    </where>
+  </select>
+
+
+
+  <select id="selectExamPaperById"  resultType="java.lang.Long">
+    SELECT id FROM t_exam_paper ep
+    <where>
+      and deleted= 0 and ep.id = #{paperId}
+      and (
+      exists (select 1 from t_exam_paper_user epu where ep.id = epu.exam_paper_id and epu.user_id = #{userId} and epu.deleted = 0)
+      or
+      exists (select 1 from t_exam_paper_department epd where ep.id = epd.exam_paper_id and epd.department_id = #{departmentId} and epd.deleted = 0)
+      )
+    </where>
+    limit 1
+  </select>
+
+
+</mapper>

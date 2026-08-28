@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.UserEventLogMapper">
+
+  <select id="page" resultType="com.mindskip.wdd.domain.UserEventLog" parameterType="com.mindskip.wdd.viewmodel.userEventLog.UserEventLogPageRequestVM">
+    select  *  from t_user_event_log
+    <where>
+      <if test="userId != null">
+        and user_id = #{userId}
+      </if>
+      <if test="userName != null">
+        and  user_name like concat('%',#{userName},'%')
+      </if>
+      <if test="departmentIdList != null and departmentIdList.size > 0">
+        and  department_id in
+        <foreach collection="departmentIdList" separator="," open="(" close=")" item="id">
+          #{id}
+        </foreach>
+      </if>
+      <if test="dataFilterUserId != null">
+        and user_id = #{dataFilterUserId}
+      </if>
+      <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+        and department_id in
+        <foreach item="item" collection="dataFilterDepartmentList" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+      </if>
+    </where>
+  </select>
+
+
+  <select id="selectLogById" resultType="com.mindskip.wdd.domain.UserEventLog" parameterType="com.mindskip.wdd.viewmodel.userEventLog.UserEventLogSelectRequestVM">
+    select  *  from t_user_event_log
+    <where>
+      <if test="userId != null">
+        and user_id = #{userId}
+      </if>
+    </where>
+    order by Id desc
+    limit 7
+  </select>
+
+</mapper>

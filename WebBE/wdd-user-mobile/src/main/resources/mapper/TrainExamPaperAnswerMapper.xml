@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.TrainExamPaperAnswerMapper">
+
+  <select id="paperDoCount" parameterType="java.lang.Long"  resultType="java.lang.Integer">
+    select count(*)
+    from t_train_exam_paper_answer
+    where train_item_user_id = #{trainItemUserId}
+  </select>
+
+
+  <select id="getPaperAnswer" parameterType="java.lang.Long" resultType="com.mindskip.wdd.domain.TrainExamPaperAnswer">
+    select  *  from t_train_exam_paper_answer
+    where deleted = 0 and train_item_user_id = #{trainItemUserId}
+  </select>
+
+</mapper>

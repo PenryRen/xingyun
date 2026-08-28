@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.CourseWareQuestionMapper">
+
+  <update id="updateDeleteByCourseWareId" parameterType="java.lang.Integer">
+    update t_course_ware_question
+    set  deleted = 1
+    where course_ware_id = #{courseWareId}
+  </update>
+  <update id="updatewarTrain">
+    update t_train_item
+    set vm_name =#{vmname}
+    where target_id=#{id}
+  </update>
+
+  <select id="getCourseWareQuestion" parameterType="java.lang.Integer" resultType="com.mindskip.wdd.domain.CourseWareQuestion">
+    select  *  from t_course_ware_question
+    where deleted = 0 and course_ware_id = #{courseWareId}
+    order by anchor_second
+  </select>
+    <select id="warName" resultType="java.lang.String">
+      select  vm_name  from t_train_item where target_id = #{id}
+    </select>
+
+
+</mapper>

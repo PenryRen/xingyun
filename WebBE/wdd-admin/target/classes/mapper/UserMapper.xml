@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.UserMapper">
+
+
+  <select id="getUserById" resultType="com.mindskip.wdd.domain.User">
+    select  *  from t_user
+    where id=#{value}
+  </select>
+
+  <select id="getUserByUserName" resultType="com.mindskip.wdd.domain.User">
+    select  *  from t_user
+    where deleted= 0 and user_name=#{value} limit 1
+  </select>
+
+
+  <select id="employeePage" resultType="com.mindskip.wdd.domain.User" parameterType="com.mindskip.wdd.viewmodel.user.UserPageRequestVM">
+    SELECT  *  FROM t_user u
+    <where>
+      and deleted= 0 and system_role = 1
+      <if test="userName != null and userName != ''">
+        and user_name like concat('%',#{userName},'%')
+      </if>
+      <if test="realName != null and realName != ''">
+        and real_name like concat('%',#{realName},'%')
+      </if>
+      <if test="status != null">
+        and status = #{status}
+      </if>
+      <if test="departmentIdList != null and departmentIdList.size() > 0">
+        and department_id in
+        <foreach item="item" collection="departmentIdList" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+      </if>
+      <if test="excludeDepartmentIdList != null and excludeDepartmentIdList.size() > 0">
+        and (  department_id is null or department_id not in
+        <foreach item="item" collection="excludeDepartmentIdList" open="(" separator="," close=")">
+          #{item}
+        </foreach> )
+      </if>
+      <if test="selectIdList != null and selectIdList.size() > 0">
+        and id not in
+        <foreach item="item" collection="selectIdList" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+      </if>
+      <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+        and department_id in
+        <foreach item="item" collection="dataFilterDepartmentList" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+      </if>
+    </where>
+  </select>
+
+
+
+  <select id="adminPage" resultType="com.mindskip.wdd.domain.User" parameterType="com.mindskip.wdd.viewmodel.user.UserPageRequestVM">
+    SELECT  *  FROM t_user u
+    <where>
+      and deleted= 0  and system_role = 2
+      <if test="userName != null and userName != ''">
+        and user_name like concat('%',#{userName},'%')
+      </if>
+      <if test="realName != null and realName != ''">
+        and real_name like concat('%',#{realName},'%')
+      </if>
+      <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+        and department_id in
+        <foreach item="item" collection="dataFilterDepartmentList" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+      </if>
+    </where>
+  </select>
+
+
+  <select id="selectByIds" resultType="com.mindskip.wdd.domain.User">
+    select  *  from t_user
+    where id in
+    <foreach item="item" collection="ids" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </select>
+
+
+
+  <select id="selectByUserName"  resultType="com.mindskip.wdd.domain.other.KeyValue" parameterType="com.mindskip.wdd.viewmodel.user.UserNameRequestVM">
+    SELECT  id as value,user_name as name
+    from t_user
+    <where>
+      deleted= 0 and status =1  and system_role = 1
+      and user_name like concat('%',#{userName},'%')
+    </where>
+    limit 5
+  </select>
+
+
+
+  <select id="selectMothCount"  resultType="com.mindskip.wdd.domain.other.KeyValue">
+		SELECT create_time as name,COUNT(create_time) as value from
+		        (
+				  SELECT DATE_FORMAT(create_time,'%Y-%m-%d') as create_time from t_user
+					WHERE  deleted= 0 and status =1 and system_role = 1 and  create_time  between  #{startTime}  and  #{endTime}
+				) a
+		GROUP BY create_time
+  </select>
+
+
+
+
+  <select id="selectByUserIds"  resultType="com.mindskip.wdd.domain.other.KeyValue" >
+    SELECT  id as value,user_name as name
+    from t_user
+    <where>
+      id in
+      <foreach collection="list" separator="," open="(" close=")" item="id">
+        #{id}
+      </foreach>
+    </where>
+  </select>
+
+
+
+  <select id="getIdByDepartmentIdList" resultType="java.lang.Integer"  parameterType="java.util.List" >
+    SELECT id from t_user
+    <where>
+      deleted= 0 and system_role = 1 and status = 1
+      and department_id in
+      <foreach item="item" collection="departmentIdList" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </where>
+  </select>
+
+
+  <select id="getUserCountByDepartmentIdList" resultType="java.lang.Integer"  parameterType="java.util.List" >
+    SELECT count(*) from t_user
+    <where>
+      deleted= 0 and system_role = 1 and status = 1
+      and department_id in
+      <foreach item="item" collection="departmentIdList" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </where>
+  </select>
+
+
+  <select id="getUserByExcludeDepartment" resultType="com.mindskip.wdd.domain.frame.ExamPaperUserSelect">
+    SELECT id  as id, user_name as userName , real_name as realName , department_id as  departmentId from t_user
+    <where>
+      deleted= 0 and system_role = 1 and status = 1
+      and id in
+      <foreach item="item" collection="userIdList" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+      and ( department_id is null or department_id not in
+      <foreach item="item" collection="excludeDepartmentIdList" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </where>
+    )
+  </select>
+
+</mapper>

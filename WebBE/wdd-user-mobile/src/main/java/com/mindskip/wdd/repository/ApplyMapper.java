@@ -1,0 +1,36 @@
+package com.mindskip.wdd.repository;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.mindskip.wdd.domain.Apply;
+import com.mindskip.wdd.viewmodel.apply.ApplyPageRequestVM;
+import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
+
+/**
+ * @version 1.7.0
+ * @description: 报名
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
+ */
+@Mapper
+public interface ApplyMapper extends BaseMapper<Apply> {
+
+    /**
+     * 报名分页
+     *
+     * @param requestVM the request vm
+     * @return the list
+     */
+    List<Apply> page(ApplyPageRequestVM requestVM);
+
+    /**
+     * 更新报名人数
+     *
+     * @param id            the id
+     * @param mathCalculate the math calculate
+     * @param limited       the limited
+     * @return the int
+     */
+    int updateApply(Integer id, Integer mathCalculate, Boolean limited);
+}

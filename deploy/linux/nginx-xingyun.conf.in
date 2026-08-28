@@ -1,0 +1,78 @@
+# 由 install.sh 生成到 /etc/nginx/conf.d/（仅 server 块，由主 nginx.conf 的 http 包含）。
+# 占位符 @@INSTALL_ROOT@@ 与 install.sh 的 INSTALL_PREFIX 一致（含 web/、resource/web-file）。
+
+server {
+    listen 6001;
+    server_name ueit-user-web;
+
+    root @@INSTALL_ROOT@@/web/ueit-user-web;
+    index index.html;
+
+    client_max_body_size 20m;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:16000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60;
+    }
+
+    # AI_AGENT Python 服务
+    location /ai-agent/ {
+        proxy_pass http://127.0.0.1:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300;
+    }
+
+    # 须与后端 system.resource.file.location 指向同一目录：@@INSTALL_ROOT@@/resource/web-file
+    location /ueupload/ {
+        alias @@INSTALL_ROOT@@/resource/web-file/;
+    }
+
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+
+server {
+    listen 6003;
+    server_name ueit-admin;
+
+    root @@INSTALL_ROOT@@/web/ueit-admin;
+    index index.html;
+
+    client_max_body_size 1024m;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:16002;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300;
+    }
+
+    # 须与后端 system.resource.file.location 指向同一目录：@@INSTALL_ROOT@@/resource/web-file
+    location /ueupload/ {
+        alias @@INSTALL_ROOT@@/resource/web-file/;
+    }
+
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.VmWareMapper">
+
+    <resultMap type="VmWare" id="VmWareResult">
+        <result property="id"    column="id"    />
+        <result property="vmType"    column="vm_type"    />
+        <result property="guid"    column="guid"    />
+        <result property="vmParentId"    column="vm_parent_id"    />
+        <result property="vmName"    column="vm_name"    />
+        <result property="vmUsername"    column="vm_username"    />
+        <result property="vmPassword"    column="vm_password"    />
+        <result property="vmIp"    column="vm_ip"    />
+        <result property="vmCpu"    column="vm_cpu"    />
+        <result property="vmStorage"    column="vm_storage"    />
+        <result property="diskName"    column="disk_name"    />
+        <result property="diskSize"    column="disk_size"    />
+        <result property="vmUserId"    column="vm_user_id"    />
+        <result property="url"    column="url"    />
+        <result property="status"    column="status"    />
+        <result property="classes"    column="classes"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="createUser"    column="create_user"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="updateUser"    column="update_user"    />
+        <result property="validCreateTime"    column="valid_create_time"    />
+        <result property="validEndTime"    column="valid_end_time"    />
+        <result property="disabled"    column="disabled"    />
+        <result property="examPaperId"    column="exam_paper_id"    />
+        <result property="deleted"    column="deleted"    />
+    </resultMap>
+
+    <sql id="selectVmWareVo">
+        select id, vm_type, guid, vm_parent_id, vm_name, vm_username, vm_password, vm_ip, vm_cpu, vm_storage, disk_name, disk_size, vm_user_id, url, status, classes, create_time, create_user, update_time, update_user, valid_create_time, valid_end_time, disabled, exam_paper_id, deleted from t_vmware
+    </sql>
+
+    <select id="vmTypeList" resultMap="VmWareResult">
+        <include refid="selectVmWareVo"/>
+        <where>
+            vm_parent_id is null and vm_type='00'
+        </where>
+    </select>
+
+    <select id="selectVmWareList" parameterType="VmWare" resultMap="VmWareResult">
+        <include refid="selectVmWareVo"/>
+        <where>
+            <if test="vmType != null  and vmType != ''"> and vm_type = #{vmType}</if>
+            <if test="guid != null  and guid != ''"> and guid = #{guid}</if>
+            <if test="vmParentId != null  and vmParentId != ''"> and vm_parent_id = #{vmParentId}</if>
+            <if test="vmName != null  and vmName != ''"> and vm_name = #{vmName}</if>
+            <if test="vmIp != null  and vmIp != ''"> and vm_ip = #{vmIp}</if>
+            <if test="vmCpu != null "> and vm_cpu = #{vmCpu}</if>
+            <if test="vmStorage != null  and vmStorage != ''"> and vm_storage = #{vmStorage}</if>
+            <if test="vmUserId != null  and vmUserId != ''"> and vm_user_id = #{vmUserId}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="classes != null  and classes != ''"> and classes = #{classes}</if>
+            <if test="createUser != null  and createUser != ''"> and create_user = #{createUser}</if>
+            <if test="updateUser != null  and updateUser != ''"> and update_user = #{updateUser}</if>
+            <if test="disabled != null "> and disabled = #{disabled}</if>
+            <if test="examPaperId != null "> and exam_paper_id = #{examPaperId}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+            <if test="deleted == null "> and (deleted is null or deleted = 0)</if>
+        </where>
+    </select>
+
+    <!--  查询过期虚拟机列表(子机)  -->
+    <select id="selectExpiredVmWareList" parameterType="VmWare" resultMap="VmWareResult">
+        <include refid="selectVmWareVo"/>
+        <where>
+            <if test="validEndTime != null "> and valid_end_time &lt;= #{validEndTime}</if>
+            <if test="disabled != null ">and disabled = #{disabled}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+        </where>
+        and vm_type = '01'
+    </select>
+
+    <!--  查询虚拟机(子机)  -->
+    <select id="selectVmWare" parameterType="VmWare" resultMap="VmWareResult">
+        <include refid="selectVmWareVo"/>
+        <where>
+            <if test="guid != null  and guid != ''">and guid = #{guid}</if>
+            <if test="vmParentId != null  and vmParentId != ''">and vm_parent_id = #{vmParentId}</if>
+            <if test="vmName != null  and vmName != ''">and vm_name = #{vmName}</if>
+            <if test="vmUserId != null  and vmUserId != ''">and vm_user_id = #{vmUserId}</if>
+            <if test="status != null  and status != ''">and status = #{status}</if>
+            <if test="classes != null  and classes != ''">and classes = #{classes}</if>
+            <if test="disabled != null ">and disabled = #{disabled}</if>
+            <if test="examPaperId != null ">and exam_paper_id = #{examPaperId}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+        </where>
+        and vm_type = '01'
+        limit 1
+    </select>
+
+    <!--  查询用户已分配的虚拟机 disabled不为1  -->
+    <select id="selectBindVmWareEnabled" parameterType="VmWare" resultMap="VmWareResult">
+        <include refid="selectVmWareVo"/>
+        <where>
+            <if test="guid != null  and guid != ''">and guid = #{guid}</if>
+            <if test="vmParentId != null  and vmParentId != ''">and vm_parent_id = #{vmParentId}</if>
+            <if test="vmName != null  and vmName != ''">and vm_name = #{vmName}</if>
+            <if test="vmUserId != null  and vmUserId != ''">and vm_user_id = #{vmUserId}</if>
+            <if test="status != null  and status != ''">and status = #{status}</if>
+            <if test="classes != null  and classes != ''">and classes = #{classes}</if>
+            <if test="examPaperId != null ">and exam_paper_id = #{examPaperId}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+        </where>
+        and (disabled = 0 or disabled is null)
+        and vm_type = '01'
+        limit 1
+    </select>
+
+    <!--  根据虚拟机父ID查询未绑定的虚拟机(子机)  -->
+    <select id="selectUnBindVmWareByParentId" parameterType="String" resultMap="VmWareResult">
+        <include refid="selectVmWareVo"/>
+        where vm_parent_id = #{vmParentId}
+        and (vm_user_id is null or vm_user_id='')
+        and vm_type = '01'
+        and (disabled is null or disabled = 0)
+        limit 1
+    </select>
+
+    <!--  根据guid查询虚拟机(主机)  -->
+    <select id="selectParentVmWareByGuid" resultMap="VmWareResult">
+        <include refid="selectVmWareVo"/>
+        where guid=#{guid} and vm_type = '00'
+    </select>
+
+    <select id="getVmWareById" resultType="com.mindskip.wdd.domain.ueit.VmWare">
+        select * from t_vmware
+        where id = #{id}
+    </select>
+
+    <select id="selectCloneCount" resultType="java.lang.Integer">
+        select COUNT(*) from t_vmware
+        where vm_parent_id = #{vmParentId}
+    </select>
+
+    <select id="selectVmWareList1" resultType="com.mindskip.wdd.domain.ueit.VmWare">
+        select t_vmware.*, t_user.real_name as realName from t_vmware left join t_user on t_vmware.vm_user_id = t_user.id
+        <where>
+            <if test="deleted != null "> and t_vmware.deleted = #{deleted}</if>
+            <if test="deleted == null "> and (t_vmware.deleted is null or t_vmware.deleted = 0)</if>
+        </where>
+    </select>
+
+    <select id="selectVmWareList2" resultType="com.mindskip.wdd.domain.ueit.VmWare">
+        select t_vmware.*, t_user.real_name as realName from t_vmware left join t_user on t_vmware.vm_user_id = t_user.id
+        <where>
+            t_vmware.vm_type = '01'
+            <if test="deleted != null "> and t_vmware.deleted = #{deleted}</if>
+            <if test="deleted == null "> and (t_vmware.deleted is null or t_vmware.deleted = 0)</if>
+        </where>
+    </select>
+
+    <insert id="insertVmWare" parameterType="VmWare" useGeneratedKeys="true" keyProperty="id">
+        insert into t_vmware
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="vmType != null">vm_type,</if>
+            <if test="guid != null">guid,</if>
+            <if test="vmParentId != null">vm_parent_id,</if>
+            <if test="vmName != null">vm_name,</if>
+            <if test="vmUsername != null">vm_username,</if>
+            <if test="vmPassword != null">vm_password,</if>
+            <if test="vmIp != null">vm_ip,</if>
+            <if test="vmCpu != null">vm_cpu,</if>
+            <if test="vmStorage != null">vm_storage,</if>
+            <if test="diskName != null">disk_name,</if>
+            <if test="diskSize != null">disk_size,</if>
+            <if test="vmUserId != null">vm_user_id,</if>
+            <if test="url != null">url,</if>
+            <if test="status != null">status,</if>
+            <if test="classes != null">classes,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="createUser != null">create_user,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="updateUser != null">update_user,</if>
+            <if test="validCreateTime != null">valid_create_time,</if>
+            <if test="validEndTime != null">valid_end_time,</if>
+            <if test="disabled != null">disabled,</if>
+            <if test="examPaperId != null">exam_paper_id,</if>
+            <if test="deleted != null">deleted,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="vmType != null">#{vmType},</if>
+            <if test="guid != null">#{guid},</if>
+            <if test="vmParentId != null">#{vmParentId},</if>
+            <if test="vmName != null">#{vmName},</if>
+            <if test="vmUsername != null">#{vmUsername},</if>
+            <if test="vmPassword != null">#{vmPassword},</if>
+            <if test="vmIp != null">#{vmIp},</if>
+            <if test="vmCpu != null">#{vmCpu},</if>
+            <if test="vmStorage != null">#{vmStorage},</if>
+            <if test="diskName != null">#{diskName},</if>
+            <if test="diskSize != null">#{diskSize},</if>
+            <if test="vmUserId != null">#{vmUserId},</if>
+            <if test="url != null">#{url},</if>
+            <if test="status != null">#{status},</if>
+            <if test="classes != null">#{classes},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="createUser != null">#{createUser},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="updateUser != null">#{updateUser},</if>
+            <if test="validCreateTime != null">#{validCreateTime},</if>
+            <if test="validEndTime != null">#{validEndTime},</if>
+            <if test="disabled != null">#{disabled},</if>
+            <if test="examPaperId != null">#{examPaperId},</if>
+            <if test="deleted != null">#{deleted},</if>
+        </trim>
+    </insert>
+
+    <update id="updateVmWare" parameterType="VmWare">
+        update t_vmware
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="vmType != null">vm_type = #{vmType},</if>
+            <if test="guid != null">guid = #{guid},</if>
+            <if test="vmParentId != null">vm_parent_id = #{vmParentId},</if>
+            <if test="vmName != null">vm_name = #{vmName},</if>
+            <if test="vmUsername != null">vm_username = #{vmUsername},</if>
+            <if test="vmPassword != null">vm_password = #{vmPassword},</if>
+            <if test="vmIp != null">vm_ip = #{vmIp},</if>
+            <if test="vmCpu != null">vm_cpu = #{vmCpu},</if>
+            <if test="vmStorage != null">vm_storage = #{vmStorage},</if>
+            <if test="diskName != null">disk_name = #{diskName},</if>
+            <if test="diskSize != null">disk_size = #{diskSize},</if>
+            <if test="vmUserId != null">vm_user_id = #{vmUserId},</if>
+            <if test="url != null">url = #{url},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="classes != null">classes = #{classes},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="createUser != null">create_user = #{createUser},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+            <if test="validCreateTime != null">valid_create_time = #{validCreateTime},</if>
+            <if test="validEndTime != null">valid_end_time = #{validEndTime},</if>
+            <if test="disabled != null">disabled = #{disabled},</if>
+            <if test="examPaperId != null">exam_paper_id = #{examPaperId},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="updateVmWareUserId">
+        update t_vmware
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="vmUserId != null">vm_user_id = #{vmUserId},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="updateVmWareUserIdAndClasses">
+        update t_vmware
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="vmUserId != null">vm_user_id = #{vmUserId},</if>
+            <if test="classes != null">classes = #{classes},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteVmWareById" parameterType="Long">
+        delete from t_vmware where id = #{id}
+    </delete>
+
+    <delete id="deleteVmWareByIds" parameterType="String">
+        delete from t_vmware where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

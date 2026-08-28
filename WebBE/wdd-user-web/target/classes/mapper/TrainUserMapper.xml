@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.TrainUserMapper">
+
+  <select id="selectTrainUser" resultType="com.mindskip.wdd.domain.TrainUser">
+    select  *  from t_train_user
+    where deleted = 0 and train_id = #{trainId} and create_user = #{userId}
+    limit 1
+  </select>
+
+
+  <select id="userTrainPage" parameterType="com.mindskip.wdd.viewmodel.user.train.UserTrainPageRequestVM" resultType="com.mindskip.wdd.viewmodel.user.train.UserTrainPageResponseVM">
+    SELECT tu.id , t.id trainId , t.`name` , t.cover_path coverPath , t.description , t.create_user  createUser, tu.create_time createTime, tu.`status`
+    from t_train t JOIN t_train_user tu ON t.id = tu.train_id
+    WHERE t.deleted = 0 and tu.deleted = 0 and tu.create_user = #{userId}
+  </select>
+
+</mapper>

@@ -1,0 +1,32 @@
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+### VsCode ###
+.vscode
+
+### 构建与打包产物 ###
+**/target/
+WebFE/wdd-admin/dist/
+WebFE/wdd-user-web/dist/
+*.tar.gz
+*.tgz
+WebBE/*.tar
+WebFE/*.tar
+
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+### 系统与日志 ###
+.DS_Store
+Thumbs.db
+*.log

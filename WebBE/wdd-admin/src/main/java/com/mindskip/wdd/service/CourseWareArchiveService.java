@@ -1,0 +1,66 @@
+package com.mindskip.wdd.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.mindskip.wdd.base.RestResponse;
+import com.mindskip.wdd.domain.CourseWareArchive;
+import com.mindskip.wdd.viewmodel.course.ware.CourseWareArchiveMoveRequestVM;
+
+import java.util.List;
+
+
+/**
+ * @version 6.0.0
+ * @description: 课件分类
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/15 10:28
+ */
+public interface CourseWareArchiveService extends IService<CourseWareArchive> {
+
+    /**
+     * 获取一级节点分类分类
+     *
+     * @return
+     */
+    List<CourseWareArchive> getRootCourseWareArchive();
+
+    /**
+     * 根据父节点id,获取分类分类
+     *
+     * @param id
+     * @return
+     */
+    List<CourseWareArchive> getCourseWareArchiveByParentId(Integer id);
+
+    /**
+     * 更新分类分类层级
+     *
+     * @param originalLevel
+     * @param targetLevel
+     * @return
+     */
+    int updateLevel(String originalLevel, String targetLevel);
+
+    /**
+     * 根据层级获取分类分类
+     *
+     * @param level
+     * @return
+     */
+    CourseWareArchive getByLevel(String level);
+
+    /**
+     * 根据层级删除分类分类
+     *
+     * @param level
+     * @return
+     */
+    int deleteByLevel(String level);
+
+    /**
+     * 课件分类位置移动
+     *
+     * @param courseWareArchiveMoveRequestVM
+     * @return {@link RestResponse}
+     */
+    RestResponse move(CourseWareArchiveMoveRequestVM courseWareArchiveMoveRequestVM);
+}

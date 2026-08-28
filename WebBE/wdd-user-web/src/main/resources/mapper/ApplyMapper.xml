@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ApplyMapper">
+
+  <select id="page" parameterType="com.mindskip.wdd.viewmodel.apply.ApplyPageRequestVM" resultType="com.mindskip.wdd.domain.Apply">
+    SELECT  *  FROM t_apply a
+    <where>
+      and a.deleted = 0 and a.status = 2 and #{now} &lt;= a.apply_end_time
+      <if test="applyArchiveIdList != null and applyArchiveIdList.size > 0">
+        and  a.apply_archive_id in
+        <foreach collection="applyArchiveIdList" separator="," open="(" close=")" item="id">
+          #{id}
+        </foreach>
+      </if>
+      and exists (select 1 from t_apply_department ad where a.id = ad.apply_id and ad.department_id = #{departmentId} and ad.deleted= 0)
+      and not exists (select 1 from t_user_apply ua where a.id=ua.apply_id and ua.user_id = #{userId} and ua.deleted= 0 )
+    </where>
+  </select>
+
+
+  <update id="updateApply">
+    update t_apply set already_apply_count = already_apply_count
+    <if test="mathCalculate == 1">
+      +
+    </if>
+    <if test="mathCalculate == 2">
+      -
+    </if>
+     1
+    WHERE id= #{id}
+    <if test="mathCalculate == 1">
+      <if test="limited">
+        and already_apply_count &lt; count
+      </if>
+    </if>
+    <if test="mathCalculate == 2">
+       and already_apply_count &gt; 0
+    </if>
+  </update>
+
+
+</mapper>

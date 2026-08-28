@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="keywords" content="<%- VITE_APP_SYSTEM_NAME %> 麟航信创实训平台">
+  <meta name="google" content="notranslate">
+  <link rel="icon" href="/favicon.ico">
+  <title><%- VITE_APP_SYSTEM_NAME %></title>
+  <style>
+    .ab1ac9d9bab12da47298 {
+      right: 68px !important;
+    }
+  </style>
+  <script>
+    var _hmt = _hmt || [];
+    window._hmt = _hmt;
+    (function () {
+      var hm = document.createElement('script')
+      hm.src = 'https://hm.baidu.com/hm.js?13b01d30310555bf6ddd960e49eda427'
+      var s = document.getElementsByTagName('script')[0]
+      s.parentNode.insertBefore(hm, s)
+    })()
+  </script>
+  <script src="/components/editor/wangEditor.min.js?v=2"></script>
+
+  <!-- Dify AI -->
+  <!-- <style>
+    #dify-chatbot-bubble-button { background-color: #1C64F2 !important; }
+    #dify-chatbot-bubble-window { width: 25rem !important; }
+  </style>
+  <script>window.difyChatbotConfig = { token: 'TxxrpCpvmMVXhjNz', baseUrl: 'http://192.168.1.162' }</script>
+  <script src="http://192.168.1.162/embed.min.js" id="TxxrpCp vmMVXhjNz" defer> </script> -->
+  <!-- Dify AI -->
+</head>
+
+<body>
+  <div id="app"></div>
+
+  <!-- Coze AI -->
+  <!-- <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.5/libs/cn/index.js"></script>
+  <script>
+    (function () {
+      new CozeWebSDK.WebChatClient({
+        config: { bot_id: '7480843218692292645' },
+        componentProps: { title: 'Coze' },
+        auth: {
+          type: 'token',
+          token: 'pat_b7YNjPYVY1oyWLhSqDgiWJIjQ4OvCWYw8oTcWG74tQzM8fkKPWLF4fP8QEzMp9ns',
+          onRefreshToken: function () {
+            return 'pat_b7YNjPYVY1oyWLhSqDgiWJIjQ4OvCWYw8oTcWG74tQzM8fkKPWLF4fP8QEzMp9ns'
+          }
+        }
+      });
+    })()
+  </script> -->
+  <!-- Coze AI -->
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>

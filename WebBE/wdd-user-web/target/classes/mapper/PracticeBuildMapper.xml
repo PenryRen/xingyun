@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.PracticeBuildMapper">
+
+    <resultMap id="ResultMap" type="com.mindskip.wdd.domain.PracticeBuild">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="exam_paper_archive_id" jdbcType="INTEGER" property="examPaperArchiveId" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="build_type" jdbcType="INTEGER" property="buildType" />
+        <result column="pass_score" jdbcType="INTEGER" property="passScore" />
+        <result column="score" jdbcType="INTEGER" property="score" />
+        <result column="question_count" jdbcType="INTEGER" property="questionCount" />
+        <result column="suggest_time" jdbcType="INTEGER" property="suggestTime" />
+        <result column="limit_start_time" jdbcType="TIMESTAMP" property="limitStartTime" />
+        <result column="limit_end_time" jdbcType="TIMESTAMP" property="limitEndTime" />
+        <result column="create_user" jdbcType="INTEGER" property="createUser" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="deleted" jdbcType="BIT" property="deleted" />
+        <result column="practice_exam_paper_id" jdbcType="BIGINT" property="practiceExamPaperId" />
+        <result column="create_department_id" jdbcType="INTEGER" property="createDepartmentId" />
+    </resultMap>
+
+    <select id="page"  resultMap="ResultMap" parameterType="com.mindskip.wdd.viewmodel.exam.paper.ExamPaperPageRequestVM">
+        SELECT  pb.* FROM t_practice_build pb
+        <where>
+            pb.deleted= 0  and  #{now} &lt;= pb.limit_end_time
+            <if test="examPaperArchiveIdList != null and examPaperArchiveIdList.size > 0">
+                and  pb.exam_paper_archive_id in
+                <foreach collection="examPaperArchiveIdList" separator="," open="(" close=")" item="id">
+                    #{id}
+                </foreach>
+            </if>
+            and exists (select 1 from t_practice_build_department pbd where pb.id = pbd.practice_build_id and pbd.department_id = #{departmentId} and pbd.deleted= 0)
+        </where>
+    </select>
+
+</mapper>

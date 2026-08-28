@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.CourseWareMapper">
+
+
+  <select id="page" parameterType="com.mindskip.wdd.viewmodel.course.ware.CourseWarePageRequestVM" resultType="com.mindskip.wdd.domain.CourseWare">
+    SELECT  *  FROM t_course_ware
+    <where>
+      and deleted= 0
+      <if test="fileType != null">
+        and file_type = #{fileType}
+      </if>
+      <if test="name != null and name != '' ">
+        and name like concat('%',#{name},'%')
+      </if>
+      <if test="courseWareArchiveIdList != null and courseWareArchiveIdList.size() > 0">
+        and course_ware_archive_id in
+        <foreach item="item" collection="courseWareArchiveIdList" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+      </if>
+      <if test="selectIdList != null and selectIdList.size>0 ">
+        and id not in
+        <foreach collection="selectIdList" item="item" separator="," open="(" close=")">
+          #{item}
+        </foreach>
+      </if>
+      <if test="dataFilterUserId != null">
+        and create_user = #{dataFilterUserId}
+      </if>
+      <if test="dataFilterDepartmentList != null and dataFilterDepartmentList.size() > 0">
+        and create_department_id in
+        <foreach item="item" collection="dataFilterDepartmentList" open="("  close=")" separator="," >
+          #{item}
+        </foreach>
+      </if>
+      <if test="vmType != null and vmType != '' ">
+        and vm_type = #{vmType}
+      </if>
+    </where>
+  </select>
+
+
+</mapper>

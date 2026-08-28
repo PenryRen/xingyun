@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ExamPaperAnswerMapper">
+
+
+  <select id="getStatus" resultType="java.lang.Integer" parameterType="java.lang.Long">
+     SELECT status
+     FROM t_exam_paper_answer
+     where id = #{paperAnswerId}
+  </select>
+
+  <select id="selectByPaperUserId" resultType="com.mindskip.wdd.domain.ExamPaperAnswer" parameterType="com.mindskip.wdd.viewmodel.exam.answer.SelectByUserVM">
+    select  *  from t_exam_paper_answer
+    where deleted = 0 and exam_paper_id = #{paperId} and create_user=#{userId}
+    limit 1
+  </select>
+
+
+  <select id="page" resultType="com.mindskip.wdd.domain.ExamPaperAnswer" parameterType="com.mindskip.wdd.viewmodel.exam.answer.ExamPaperAnswerPageRequestVM">
+    SELECT  *  FROM t_exam_paper_answer
+    <where>
+      deleted = 0 and create_user = #{createUser}
+      <if test="examPaperArchiveIdList != null and examPaperArchiveIdList.size > 0">
+        and  exam_paper_archive_id in
+        <foreach collection="examPaperArchiveIdList" separator="," open="(" close=")" item="id">
+          #{id}
+        </foreach>
+      </if>
+      <if test="passed != null">
+        and passed = #{passed}
+      </if>
+    </where>
+  </select>
+
+</mapper>

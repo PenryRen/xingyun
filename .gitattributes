@@ -1,0 +1,4 @@
+*.sh text eol=lf
+*.service.in text eol=lf
+*.conf.in text eol=lf
+*.env text eol=lf

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.CourseWareWatchDetailMapper">
+
+  <select id="watchUserSum"  resultType="java.lang.Integer">
+    select sum(watch_interval)
+    from t_course_ware_watch_detail
+    where course_ware_id = #{courseWareId} and create_user = #{userId}
+          and create_time >= #{startTime}
+  </select>
+
+
+  <select id="getLastItem"  resultType="com.mindskip.wdd.domain.CourseWareWatchDetail">
+    select  *  from t_course_ware_watch_detail
+    where course_ware_id = #{courseWareId} and create_user = #{userId}
+    order by id desc
+    limit 1
+  </select>
+
+</mapper>

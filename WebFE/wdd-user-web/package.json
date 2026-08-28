@@ -1,0 +1,57 @@
+{
+  "name": "ueit-user-web",
+  "version": "9.5.0",
+  "author": "河南财经政法大学麟航团队",
+  "description": "麟航员工考试系统",
+  "private": true,
+  "scripts": {
+    "serve": "vite serve --mode development",
+    "build": "vue-tsc --noEmit && vite build --mode production",
+    "lint": "eslint src/**/*.{ts,js,vue} --fix",
+    "prettier": "prettier --write ."
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@types/crypto-js": "^4.1.1",
+    "@types/js-cookie": "^3.0.3",
+    "@types/uuid": "^8.3.4",
+    "@vueuse/core": "^9.13.0",
+    "axios": "^1.4.0",
+    "crypto-js": "^4.1.1",
+    "element-plus": "^2.3.7",
+    "jquery": "^3.7.0",
+    "js-base64": "^3.7.5",
+    "js-cookie": "^3.0.5",
+    "jsencrypt": "^3.3.2",
+    "pinia": "^2.1.4",
+    "split.js": "^1.6.5",
+    "uuid": "^9.0.0",
+    "vite-plugin-html": "^3.2.0",
+    "vue": "^3.5.27",
+    "vue-plugin-load-script": "^2.1.1",
+    "vue-router": "^4.2.4"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^16.3.0",
+    "@commitlint/config-conventional": "^16.2.4",
+    "@types/nprogress": "^0.2.0",
+    "@types/path-browserify": "^1.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "@vitejs/plugin-vue": "^3.2.0",
+    "eslint": "^8.44.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-vue": "^8.7.1",
+    "fast-glob": "^3.3.0",
+    "prettier": "^2.8.8",
+    "sass": "^1.63.6",
+    "typescript": "^4.9.5",
+    "vite": "^3.2.7",
+    "vite-plugin-svg-icons": "^2.0.1",
+    "vue-tsc": "^0.35.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ForumCommentMapper">
+
+  <select id="getCommentByIdList" resultType="com.mindskip.wdd.domain.ForumComment">
+    SELECT  *  FROM t_forum_comment
+    <where>
+      deleted = 0  and  id in
+      <foreach collection="idList" separator="," open="(" close=")" item="id">
+        #{id,jdbcType=VARCHAR}
+      </foreach>
+    </where>
+  </select>
+
+
+  <select id="page" resultType="com.mindskip.wdd.domain.ForumComment" parameterType="com.mindskip.wdd.viewmodel.forum.ForumCommentPageRequestVM">
+    SELECT  *  FROM t_forum_comment
+    <where>
+      deleted = 0  and forum_id = #{forumId} and parent_id is null
+    </where>
+  </select>
+
+
+  <select id="userCommentPage" resultType="com.mindskip.wdd.domain.ForumComment" parameterType="com.mindskip.wdd.viewmodel.user.CommentPageRequestVM">
+    SELECT  *  FROM t_forum_comment
+    <where>
+      deleted = 0  and create_user = #{userId}
+    </where>
+  </select>
+
+
+  <select id="getForumCommentByLevel" resultType="com.mindskip.wdd.domain.ForumComment">
+    SELECT  *  FROM t_forum_comment
+    <where>
+      deleted = 0  and forum_id = #{forumId} and parent_id is not null and
+      <foreach collection="idLevel" separator="or" open="(" close=")" item="item">
+        id_level like concat('',#{item},'%')
+      </foreach>
+    </where>
+    order by id desc
+  </select>
+
+
+</mapper>

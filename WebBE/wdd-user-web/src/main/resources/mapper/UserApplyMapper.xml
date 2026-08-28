@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.UserApplyMapper">
+
+
+  <select id="getUserApply" resultType="com.mindskip.wdd.domain.UserApply">
+    select  *  from t_user_apply
+    where deleted =0 and user_id = #{userId} and apply_id = #{applyId}
+    limit 1
+  </select>
+
+
+  <select id="page" parameterType="com.mindskip.wdd.viewmodel.apply.ApplyPageRequestVM"  resultType="com.mindskip.wdd.viewmodel.apply.UserApplyPageResponseVM">
+      select us.id , us.create_time as appDateTime , a.name , a.create_time as createTime ,
+      a.limit_start_time limitStartTime ,a.limit_end_time limitEndTime ,a.apply_end_time applyEndTime ,a.limited ,
+      a.count , a.already_apply_count alreadyApplyCount ,a.id applyId , a.status status
+      from t_user_apply us LEFT JOIN t_apply a on us.apply_id =a.id
+      WHERE us.deleted = 0 and a.deleted = 0 and us.user_id = #{userId}
+  </select>
+
+
+</mapper>

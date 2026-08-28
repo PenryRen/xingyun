@@ -1,0 +1,1 @@
+import{p as a,a as s}from"./index.96badb1e.js";function r(t){return a(`/api/course/ware/select/${t}`,void 0)}function o(t){return a("/api/course/ware/watch",t)}function i(t){return s("/api/course/ware/question/submit",t)}export{i as a,r as s,o as w};

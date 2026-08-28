@@ -1,0 +1,1 @@
+import{p as a,b as i}from"./index.96badb1e.js";function n(){return a("/api/train/archive/list",void 0)}function s(t){return a("/api/train/page",t)}function e(t){return a(`/api/train/select/${t}`,void 0)}function o(t){return i(`/api/train/start/${t}`,void 0)}export{o as a,n as l,s as p,e as s};

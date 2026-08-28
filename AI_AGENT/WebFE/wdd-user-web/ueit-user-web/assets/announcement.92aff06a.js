@@ -1,0 +1,1 @@
+import{p as e}from"./index.96badb1e.js";function a(){return e("/api/announcement/tree",void 0)}function r(n){return e("/api/announcement/page",n)}function o(n){return e(`/api/announcement/select/${n}`,void 0)}function i(n){return e(`/api/announcement/read/${n}`,void 0)}export{r as p,i as r,o as s,a as t};

@@ -1,0 +1,1 @@
+import{p as a,a as i}from"./index.96badb1e.js";function n(){return a("/api/apply/archive/list",void 0)}function t(p){return a("/api/apply/page",p)}function c(p){return a("/api/apply/record",p)}function e(p){return i(`/api/apply/go/${p}`,void 0)}function l(p,r){return i(`/api/apply/cancel/${p}/${r}`,void 0)}export{l as c,e as g,n as l,t as p,c as r};

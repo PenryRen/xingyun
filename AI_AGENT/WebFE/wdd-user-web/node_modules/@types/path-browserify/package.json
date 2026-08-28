@@ -1,0 +1,25 @@
+{
+    "name": "@types/path-browserify",
+    "version": "1.0.3",
+    "description": "TypeScript definitions for path-browserify",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/path-browserify",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Nathan Bierema",
+            "githubUsername": "Methuselah96",
+            "url": "https://github.com/Methuselah96"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/path-browserify"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "typesPublisherContentHash": "d6c4144072548eef864afcc72b7e213f318227253c8dbdc7f28deb101ccb7417",
+    "typeScriptVersion": "4.8"
+}

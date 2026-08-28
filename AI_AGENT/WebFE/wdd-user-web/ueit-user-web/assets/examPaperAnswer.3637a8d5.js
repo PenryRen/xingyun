@@ -1,0 +1,1 @@
+import{p as r,a as e}from"./index.96badb1e.js";function n(a){return r("/api/exam/paper/answer/page",a)}function t(a){return r("/api/exam/paper/answer/monitor",a)}function i(a){return e("/api/exam/paper/answer/submit",a)}function s(a){return r(`/api/exam/paper/answer/read/select/${a}`,void 0)}export{t as m,n as p,s as r,i as s};

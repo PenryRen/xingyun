@@ -37,10 +37,10 @@ pip install -r requirements.txt
 创建 `.env` 文件或在系统环境变量中配置：
 
 ```env
-# OpenAI API 配置（优先使用）
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_BASE_URL=https://api.openai.com/v1
-MODEL_NAME=gpt-4o-mini
+# 讯飞星火 Spark Ultra-32K 配置
+SPARK_API_PASSWORD=your_api_password
+SPARK_BASE_URL=https://spark-api-open.xf-yun.com/v1/
+SPARK_MODEL=4.0Ultra
 ```
 
 ### 3. 启动服务
@@ -448,7 +448,7 @@ public class AIAgentClient {
 
 ## 注意事项
 
-1. **环境变量**：确保正确配置 OpenAI API 密钥
+1. **环境变量**：确保正确配置讯飞星火 `SPARK_API_PASSWORD`
 2. **网络连接**：远程模型需要稳定的网络连接
 3. **会话管理**：session_id 用于保持对话上下文，建议按用户分配
 4. **超时设置**：默认超时时间为 600 秒，长对话可能需要更长时间

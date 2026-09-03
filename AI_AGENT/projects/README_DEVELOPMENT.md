@@ -67,7 +67,7 @@
 
 ### 业务逻辑层
 - 基于 LangChain 和 LangGraph 构建
-- 集成豆包大模型 (doubao-seed-2-0-pro-260215)
+- 集成讯飞星火 Spark Ultra-32K（兼容接口模型参数：`4.0Ultra`）
 - 支持多轮对话和上下文记忆
 
 ### 工具层

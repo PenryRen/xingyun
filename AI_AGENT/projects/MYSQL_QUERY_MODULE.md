@@ -84,7 +84,7 @@ context = get_student_learning_context(user_id=101)
 learning_context = get_student_learning_context(current_user_id)
 ```
 
-本模块不决定何时调用DeepSeek、不处理意图路由、不维护会话，也不允许模型生成或执行SQL。后续接入层必须从服务端认证信息取得 `current_user_id`，并且只能将脱敏结果交给模型。
+本模块不决定何时调用大模型、不处理意图路由、不维护会话，也不允许模型生成或执行SQL。后续接入层必须从服务端认证信息取得 `current_user_id`，并且只能将脱敏结果交给模型。
 
 ## 测试
 

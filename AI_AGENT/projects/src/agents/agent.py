@@ -82,11 +82,13 @@ def build_agent(use_local: bool = False, ctx=None):
         model_name = cfg['config'].get("model")
         temperature = cfg['config'].get('temperature', 0.7)
         timeout = cfg['config'].get('timeout', 600)
+        max_tokens = cfg['config'].get('max_tokens', 8000)
     else:
         # 配置文件不存在时使用默认值
         model_name = None
         temperature = 0.7
         timeout = 600
+        max_tokens = 8000
     
     # 使用模型管理器初始化模型
     llm = ModelManager.get_llm(
@@ -94,7 +96,8 @@ def build_agent(use_local: bool = False, ctx=None):
         model_name=model_name,
         temperature=temperature,
         streaming=True,
-        timeout=timeout
+        timeout=timeout,
+        max_tokens=max_tokens
     )
     
     # 导入各个模块的Agent构建函数
@@ -158,7 +161,7 @@ def build_agent(use_local: bool = False, ctx=None):
 ## 3. 学情检测模块
 当用户请求生成试卷、进行测试、强化训练时，使用此模块。
 - 使用 generate_intelligent_paper 智能组卷
-- 使用 generate_enhanced_paper_by_weak_points 强化测试
+- 使用 generate_enhanced_paper 强化测试
 - 使用 get_question_bank 查看题库
 
 ## 4. 办学助手模块（默认模块）

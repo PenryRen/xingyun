@@ -92,7 +92,7 @@ class GraphService:
     def _get_graph(self, ctx=None):
         if _is_agent_proj():
             from agents.agent import get_agent_by_request
-            return get_agent_by_request({})
+            return get_agent_by_request("")
 
         if self._graph is not None:
             return self._graph
@@ -399,8 +399,10 @@ async def health_check(force: bool = False):
             "timestamp": datetime.now().isoformat(),
         }
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        base_url = os.getenv("OPENAI_BASE_URL")
+        from models.model_manager import ModelManager
+
+        model_config = ModelManager.get_model_config()
+        base_url = model_config["base_url"]
 
         workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
         config_path = os.path.join(workspace_path, "config/teaching_assistant_config.json")
@@ -413,15 +415,17 @@ async def health_check(force: bool = False):
             except Exception:
                 pass
         if not model_name:
-            model_name = os.getenv("MODEL_NAME")
+            model_name = model_config["default_model"]
 
-        configured = bool(api_key and base_url and model_name)
+        configured = bool(model_config["configured"] and base_url and model_name)
         result["model_configured"] = configured
+        result["model_provider"] = model_config["provider"]
+        result["model_name"] = model_name
         if not configured:
             missing = []
-            if not api_key: missing.append("api_key")
-            if not base_url: missing.append("base_url")
-            if not model_name: missing.append("model_name")
+            if not model_config["configured"]: missing.append("SPARK_API_PASSWORD")
+            if not base_url: missing.append("SPARK_BASE_URL")
+            if not model_name: missing.append("SPARK_MODEL")
             result["model_probe_code"] = "CONFIG_INCOMPLETE"
             result["model_message"] = "模型配置不完整，缺失: " + ", ".join(missing)
             return result
@@ -433,7 +437,7 @@ async def health_check(force: bool = False):
             result.update({k: v for k, v in cached.items() if k != "ts"})
             return result
 
-        probe_result = await _probe_model(api_key, base_url, model_name)
+        probe_result = await _probe_model(model_name)
         result["model_available"] = probe_result["ok"]
         result["model_probe_code"] = probe_result["code"]
         result["model_message"] = probe_result["message"]
@@ -472,15 +476,13 @@ async def health_check(force: bool = False):
 _health_cache: Dict[str, Any] = {}
 
 
-async def _probe_model(api_key: str, base_url: str, model_name: str) -> Dict[str, Any]:
-    """真实发送一个最小 ping 请求探测模型可用性"""
+async def _probe_model(model_name: str) -> Dict[str, Any]:
+    """通过星火 OpenAI 兼容接口发送最小请求，探测模型可用性。"""
     try:
-        from langchain_openai import ChatOpenAI
+        from models.model_manager import ModelManager
         from langchain_core.messages import HumanMessage
-        probe_llm = ChatOpenAI(
-            model=model_name,
-            api_key=api_key,
-            base_url=base_url,
+        probe_llm = ModelManager.get_llm(
+            model_name=model_name,
             temperature=0,
             streaming=False,
             timeout=30,
@@ -494,6 +496,9 @@ async def _probe_model(api_key: str, base_url: str, model_name: str) -> Dict[str
         return {"ok": True, "code": "OK_NO_CONTENT", "message": "模型调用成功（无文本内容，可能为 reasoning 模型）"}
     except Exception as e:
         msg = f"{type(e).__name__}: {e}"
+        api_password = os.getenv("SPARK_API_PASSWORD", "").strip()
+        if api_password:
+            msg = msg.replace(api_password, "[REDACTED]")
         code = "MODEL_ERROR"
         msg_lower = str(e).lower()
         if "401" in msg_lower or "authentication" in msg_lower or "api key" in msg_lower:

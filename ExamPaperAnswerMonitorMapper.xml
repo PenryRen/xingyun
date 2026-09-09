@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mindskip.wdd.repository.ExamPaperAnswerMonitorMapper">
+
+  <resultMap id="ResultMap" type="com.mindskip.wdd.domain.ExamPaperAnswerMonitor">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="exam_paper_id" jdbcType="BIGINT" property="examPaperId" />
+    <result column="paper_name" jdbcType="VARCHAR" property="paperName" />
+    <result column="paper_type" jdbcType="INTEGER" property="paperType" />
+    <result column="system_score" jdbcType="INTEGER" property="systemScore" />
+    <result column="user_score" jdbcType="INTEGER" property="userScore" />
+    <result column="paper_score" jdbcType="INTEGER" property="paperScore" />
+    <result column="question_correct" jdbcType="INTEGER" property="questionCorrect" />
+    <result column="question_count" jdbcType="INTEGER" property="questionCount" />
+    <result column="cheat_count" jdbcType="INTEGER" property="cheatCount" />
+    <result column="do_time" jdbcType="INTEGER" property="doTime" />
+    <result column="create_user" jdbcType="INTEGER" property="createUser" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="exam_paper_archive_id" jdbcType="INTEGER" property="examPaperArchiveId" />
+    <result column="exam_paper_build_id" jdbcType="BIGINT" property="examPaperBuildId" />
+    <result column="create_department_id" jdbcType="INTEGER" property="createDepartmentId" />
+  </resultMap>
+
+  <select id="page" parameterType="com.mindskip.wdd.viewmodel.monitor.PaperMonitorPageRequestVM" resultMap="ResultMap">
+    select id, exam_paper_id, paper_name, paper_type, system_score, user_score, paper_score,
+    question_correct, question_count, cheat_count, do_time, create_user, create_time,
+    update_time, exam_paper_archive_id, exam_paper_build_id, create_department_id, answer_frame_content
+    from t_exam_paper_answer_monitor epam
+    <where>
+      and exists ( select 1 from t_user u where epam.create_user = u.id and u.deleted = 0 )
+      <if test="id != null">
+       and exam_paper_build_id = #{id}
+      </if>
+      <if test="userName != null and userName != ''">
+        and exists (select 1 from t_user u where epam.create_user=u.id and u.user_name like concat('%',#{userName},'%') and u.deleted= 0 )
+      </if>
+      <if test="departmentIdList != null and departmentIdList.size > 0">
+        and  create_department_id in
+        <foreach collection="departmentIdList" separator="," open="(" close=")" item="id">
+          #{id}
+        </foreach>
+      </if>
+    </where>
+  </select>
+
+</mapper>

@@ -21,9 +21,12 @@ class VectorStore:
     
     def __init__(
         self,
-        index_path: str = "AI_AGENT/projects/src/knowledge/vector_index",
+        index_path: str = None,
         use_local: bool = True
     ):
+        if index_path is None:
+            _base = os.path.dirname(os.path.abspath(__file__))
+            index_path = os.path.join(_base, "vector_index")
         """
         初始化向量存储
         

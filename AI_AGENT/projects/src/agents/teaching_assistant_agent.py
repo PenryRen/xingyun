@@ -11,6 +11,7 @@ from langchain_core.messages import AnyMessage
 from typing import Annotated
 from storage.memory.memory_saver import get_memory_saver
 from models.model_manager import ModelManager
+from knowledge import KnowledgeBase
 from langchain_core.tools import Tool
 
 # 预查询辅助模块（主线程数据库查询）
@@ -37,14 +38,7 @@ def _windowed_messages(old, new):
 class TeachingAssistantState(MessagesState):
     messages: Annotated[list[AnyMessage], _windowed_messages]
 
-
-def _create_knowledge_base():
-    """按需导入可选知识库依赖，避免阻塞纯聊天模式启动。"""
-    from knowledge import KnowledgeBase
-
-    return KnowledgeBase(use_local=True)
-
-def build_teaching_assistant_agent(use_local: bool = False):
+def build_teaching_assistant_agent(use_local: bool = True):
     """
     构建办学助手Agent
     
@@ -58,12 +52,11 @@ def build_teaching_assistant_agent(use_local: bool = False):
         streaming=True
     )
     
-    # 聊天模型与 Embedding 独立配置：星火只负责对话，知识库默认使用本地 Embedding。
-    # 精简部署未安装本地 Embedding 依赖时，仍可提供不依赖知识库的问答能力。
+    # 初始化知识库（失败时不影响 Agent 基本功能）
     try:
-        knowledge_base = _create_knowledge_base()
-    except Exception as exc:
-        print(f"知识库初始化失败，已降级为普通问答: {type(exc).__name__}: {exc}")
+        knowledge_base = KnowledgeBase(use_local=use_local)
+    except Exception as e:
+        print(f"知识库初始化失败，AI 助教将在无知识库模式下运行: {e}")
         knowledge_base = None
     
     # 定义工具
@@ -79,8 +72,7 @@ def build_teaching_assistant_agent(use_local: bool = False):
             相关文档内容
         """
         if knowledge_base is None:
-            return "知识库当前不可用，请基于已有知识回答并明确说明信息来源限制。"
-
+            return "知识库未初始化，无法查询相关信息"
         context = knowledge_base.get_relevant_context(query, k=k)
         if context:
             return f"知识库查询结果:\n{context}"

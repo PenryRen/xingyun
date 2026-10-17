@@ -85,9 +85,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.qcloud</groupId>
-            <artifactId>cos_api</artifactId>
-            <version>${com.qcloud.version}</version>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+            <version>${com.aliyun.oss.version}</version>
         </dependency>
 
         <dependency>

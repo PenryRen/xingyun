@@ -10,6 +10,16 @@ export function vmTypeList(): any {
 export function PageList(data: any): any {
   return post(`/api/vmWare/page`, data);
 }
+
+/** 管理端编辑：按 id 拉取单条 */
+export function vmWareSelect(id: number | string): any {
+  return post(`/api/vmWare/select/${id}`, undefined);
+}
+
+/** 管理端编辑：保存主机模板（含 BundleId → url） */
+export function vmWareEdit(data: any): any {
+  return post(`/api/vmWare/edit`, data);
+}
 export function shutdown(data: any): any {
   return post(`/api/vmWare/shutdown`, data);
 }

@@ -16,8 +16,10 @@ import com.mindskip.wdd.viewmodel.announcement.AnnouncementDetailRequestVM;
 import com.mindskip.wdd.viewmodel.announcement.AnnouncementPageRequestVM;
 import com.mindskip.wdd.viewmodel.announcement.AnnouncementPageResponseVM;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -30,6 +32,7 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/api/announcement")
+@Slf4j
 public class AnnouncementController extends BaseApiController {
 
     private final AnnouncementService announcementService;
@@ -43,10 +46,20 @@ public class AnnouncementController extends BaseApiController {
      */
     @PostMapping("/tree")
     public RestResponse<List<AnnouncementArchiveVM>> tree() {
-        List<AnnouncementArchive> rootTree = announcementService.selectRootTree();
-        List<AnnouncementArchiveVM> rootVM = announcementMapping.toAnnouncementArchiveVMList(rootTree);
-        archiveRecursion(rootVM);
-        return RestResponse.ok(rootVM);
+        try {
+            List<AnnouncementArchive> rootTree = announcementService.selectRootTree();
+            if (null == rootTree) {
+                return RestResponse.ok(Collections.emptyList());
+            }
+            List<AnnouncementArchiveVM> rootVM = announcementMapping.toAnnouncementArchiveVMList(rootTree);
+            if (null != rootVM) {
+                archiveRecursion(rootVM);
+            }
+            return RestResponse.ok(null == rootVM ? Collections.emptyList() : rootVM);
+        } catch (Exception e) {
+            log.warn("announcement tree failed: {}", e.getMessage());
+            return RestResponse.ok(Collections.emptyList());
+        }
     }
 
 
@@ -58,16 +71,31 @@ public class AnnouncementController extends BaseApiController {
      */
     @PostMapping("/page")
     public RestResponse<PageInfo<AnnouncementPageResponseVM>> page(@RequestBody AnnouncementPageRequestVM model) {
-        model.setDepartmentId(getCurrentUser().getDepartmentId());
-        PageInfo<Announcement> pageInfo = announcementService.page(model);
-        PageInfo<AnnouncementPageResponseVM> page = PageInfoHelper.copyMap(pageInfo, d -> {
-            AnnouncementPageResponseVM announcementPageResponseVM = announcementMapping.toAnnouncementResponseVM(d);
-            User user = userService.getById(d.getCreateUser());
-            announcementPageResponseVM.setCreateUserName(user.getUserName());
-            announcementPageResponseVM.setCreateRealName(user.getRealName());
-            return announcementPageResponseVM;
-        });
-        return RestResponse.ok(page);
+        try {
+            User currentUser = getCurrentUser();
+            if (null != currentUser) {
+                model.setDepartmentId(currentUser.getDepartmentId());
+            }
+            PageInfo<Announcement> pageInfo = announcementService.page(model);
+            PageInfo<AnnouncementPageResponseVM> page = PageInfoHelper.copyMap(pageInfo, d -> {
+                AnnouncementPageResponseVM announcementPageResponseVM = announcementMapping.toAnnouncementResponseVM(d);
+                User user = userService.getById(d.getCreateUser());
+                if (null != user) {
+                    announcementPageResponseVM.setCreateUserName(user.getUserName());
+                    announcementPageResponseVM.setCreateRealName(user.getRealName());
+                } else {
+                    announcementPageResponseVM.setCreateUserName("system");
+                    announcementPageResponseVM.setCreateRealName("系统管理员");
+                }
+                return announcementPageResponseVM;
+            });
+            return RestResponse.ok(page);
+        } catch (Exception e) {
+            log.warn("announcement page failed: {}", e.getMessage());
+            PageInfo<AnnouncementPageResponseVM> empty = new PageInfo<>(Collections.emptyList());
+            empty.setTotal(0L);
+            return RestResponse.ok(empty);
+        }
     }
 
 
@@ -79,15 +107,25 @@ public class AnnouncementController extends BaseApiController {
      */
     @PostMapping("/select/{id}")
     public RestResponse select(@PathVariable Integer id) {
-        Announcement announcement = announcementService.getById(id);
-        if (null == announcement || announcement.getDeleted()) {
+        try {
+            Announcement announcement = announcementService.getById(id);
+            if (null == announcement || announcement.getDeleted()) {
+                return RestResponse.fail(2, "通知公告未找到！");
+            }
+            AnnouncementDetailRequestVM announcementDetailRequestVM = announcementMapping.toAnnouncementEditRequestVM(announcement);
+            User user = userService.getById(announcement.getCreateUser());
+            if (null != user) {
+                announcementDetailRequestVM.setCreateUserName(user.getUserName());
+                announcementDetailRequestVM.setCreateRealName(user.getRealName());
+            } else {
+                announcementDetailRequestVM.setCreateUserName("system");
+                announcementDetailRequestVM.setCreateRealName("系统管理员");
+            }
+            return RestResponse.ok(announcementDetailRequestVM);
+        } catch (Exception e) {
+            log.warn("announcement select failed: {}", e.getMessage());
             return RestResponse.fail(2, "通知公告未找到！");
         }
-        AnnouncementDetailRequestVM announcementDetailRequestVM = announcementMapping.toAnnouncementEditRequestVM(announcement);
-        User user = userService.getById(announcement.getCreateUser());
-        announcementDetailRequestVM.setCreateUserName(user.getUserName());
-        announcementDetailRequestVM.setCreateRealName(user.getRealName());
-        return RestResponse.ok(announcementDetailRequestVM);
     }
 
 

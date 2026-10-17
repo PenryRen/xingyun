@@ -14,11 +14,17 @@ from typing import Any, Dict, Iterable, AsyncIterable, AsyncGenerator, Optional
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # 本地部署：优先加载项目根目录的 .env
+# __file__ 位于 projects/src/main.py，因此项目根目录为上一级
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 try:
     from dotenv import load_dotenv
-    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
+    load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 except ImportError:
     pass
+
+# 将项目根目录注入到环境变量，供后续代码使用
+os.environ.setdefault("PROJECT_ROOT", _PROJECT_ROOT)
 
 import uvicorn
 import time
@@ -92,7 +98,7 @@ class GraphService:
     def _get_graph(self, ctx=None):
         if _is_agent_proj():
             from agents.agent import get_agent_by_request
-            return get_agent_by_request("")
+            return get_agent_by_request({})
 
         if self._graph is not None:
             return self._graph
@@ -399,13 +405,12 @@ async def health_check(force: bool = False):
             "timestamp": datetime.now().isoformat(),
         }
 
-        from models.model_manager import ModelManager
+        api_key = os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("OPENAI_BASE_URL")
 
-        model_config = ModelManager.get_model_config()
-        base_url = model_config["base_url"]
-
-        workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
-        config_path = os.path.join(workspace_path, "config/teaching_assistant_config.json")
+        # 优先使用 PROJECT_ROOT（代码所在项目根目录），不依赖 WORKSPACE_PATH（可能为相对路径）
+        project_root = os.getenv("PROJECT_ROOT") or _PROJECT_ROOT
+        config_path = os.path.join(project_root, "config", "teaching_assistant_config.json")
         model_name = None
         if os.path.exists(config_path):
             try:
@@ -414,18 +419,18 @@ async def health_check(force: bool = False):
                 model_name = (cfg.get("config") or {}).get("model")
             except Exception:
                 pass
-        if not model_name:
-            model_name = model_config["default_model"]
+        # 环境变量 MODEL_NAME 优先级高于配置文件
+        env_model_name = os.getenv("MODEL_NAME")
+        if env_model_name:
+            model_name = env_model_name
 
-        configured = bool(model_config["configured"] and base_url and model_name)
+        configured = bool(api_key and base_url and model_name)
         result["model_configured"] = configured
-        result["model_provider"] = model_config["provider"]
-        result["model_name"] = model_name
         if not configured:
             missing = []
-            if not model_config["configured"]: missing.append("SPARK_API_PASSWORD")
-            if not base_url: missing.append("SPARK_BASE_URL")
-            if not model_name: missing.append("SPARK_MODEL")
+            if not api_key: missing.append("api_key")
+            if not base_url: missing.append("base_url")
+            if not model_name: missing.append("model_name")
             result["model_probe_code"] = "CONFIG_INCOMPLETE"
             result["model_message"] = "模型配置不完整，缺失: " + ", ".join(missing)
             return result
@@ -437,7 +442,7 @@ async def health_check(force: bool = False):
             result.update({k: v for k, v in cached.items() if k != "ts"})
             return result
 
-        probe_result = await _probe_model(model_name)
+        probe_result = await _probe_model(api_key, base_url, model_name)
         result["model_available"] = probe_result["ok"]
         result["model_probe_code"] = probe_result["code"]
         result["model_message"] = probe_result["message"]
@@ -476,17 +481,19 @@ async def health_check(force: bool = False):
 _health_cache: Dict[str, Any] = {}
 
 
-async def _probe_model(model_name: str) -> Dict[str, Any]:
-    """通过星火 OpenAI 兼容接口发送最小请求，探测模型可用性。"""
+async def _probe_model(api_key: str, base_url: str, model_name: str) -> Dict[str, Any]:
+    """真实发送一个最小 ping 请求探测模型可用性"""
     try:
-        from models.model_manager import ModelManager
+        from langchain_openai import ChatOpenAI
         from langchain_core.messages import HumanMessage
-        probe_llm = ModelManager.get_llm(
-            model_name=model_name,
+        probe_llm = ChatOpenAI(
+            model=model_name,
+            api_key=api_key,
+            base_url=base_url,
             temperature=0,
             streaming=False,
-            timeout=30,
-            max_tokens=200,
+            timeout=8,
+            max_tokens=10,
         )
         resp = await probe_llm.ainvoke([HumanMessage(content="ping")])
         content = getattr(resp, "content", None) if resp else None
@@ -496,9 +503,6 @@ async def _probe_model(model_name: str) -> Dict[str, Any]:
         return {"ok": True, "code": "OK_NO_CONTENT", "message": "模型调用成功（无文本内容，可能为 reasoning 模型）"}
     except Exception as e:
         msg = f"{type(e).__name__}: {e}"
-        api_password = os.getenv("SPARK_API_PASSWORD", "").strip()
-        if api_password:
-            msg = msg.replace(api_password, "[REDACTED]")
         code = "MODEL_ERROR"
         msg_lower = str(e).lower()
         if "401" in msg_lower or "authentication" in msg_lower or "api key" in msg_lower:
@@ -558,6 +562,7 @@ async def learning_assistant(req: LearningAssistantRequest):
         logger.error(f"Learning assistant error: {e}", exc_info=True)
         return {"response": {"content": f"AI 助教暂时不可用：{str(e)}"}}
 
+
 @app.post("/learning/assistant/session/reset")
 async def learning_assistant_session_reset():
     """重置 AI 助教会话（适配前端 wdd-user-web）"""
@@ -570,6 +575,7 @@ async def learning_assistant_session_reset():
     except Exception as e:
         logger.error(f"Session reset error: {e}", exc_info=True)
         return {"code": 200, "message": "success", "warning": str(e)}
+
 
 @app.post("/learning/workspace")
 async def learning_workspace(request: Request):

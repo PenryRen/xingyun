@@ -1,7 +1,7 @@
 system:
   resource:
     #本地存储，配合nginx使用
-    local-store: true
+    local-store: false
     file:
       location: D:\starCode\nginx-1.27.5\html\resource\web-file
       url: http://127.0.0.1:6001/ueupload/
@@ -28,5 +28,13 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/wdd?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true
 #    url: jdbc:mysql://192.168.1.228:3306/wdd?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true
     username: root
-    password: root
+    password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+# 第三方VNC虚拟机平台对接配置
+vmware:
+  third-party:
+    enabled: true
+    base-url: http://tadsxpt.ueweixin.com
+    login-user: cjzfAdmin
+    login-password: LPTAJ8fBLxGv+YWPzMXGDGQp7qCBAqb7WWMC0v/N0qWdUAvDAXV0i80TT5mYNucedphiPAZb8CXl4i4eN4bftF4EDv18XFigxVGcyNjNY+cNW/bFHqj756ScIBuXkmFmTEStvynD1Ki1T1oaa7bokI7DqyTqIhn9yVN+8T5nbCs=

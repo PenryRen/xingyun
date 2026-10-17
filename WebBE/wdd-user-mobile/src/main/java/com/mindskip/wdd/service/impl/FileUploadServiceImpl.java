@@ -9,16 +9,20 @@ import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
+import com.qcloud.cos.model.COSObject;
+import com.qcloud.cos.model.GetObjectRequest;
 import com.qcloud.cos.model.ObjectMetadata;
 import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.region.Region;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
@@ -159,5 +163,75 @@ public class FileUploadServiceImpl implements FileUploadService {
         ClientConfig clientConfig = new ClientConfig(qRegion);
         COSClient cosClient = new COSClient(cred, clientConfig);
         return cosClient;
+    }
+
+    /**
+     * 流式输出 COS 文件到响应，强制 Content-Disposition: inline，支持 Range 请求
+     * 用于绕过 COS Bucket 强制下载开关，使视频/PDF 可在浏览器内联播放
+     */
+    @Override
+    public void streamOssFile(String key, HttpServletResponse response, String rangeHeader) throws IOException {
+        COSClient cosClient = getCOSClient();
+        COSObject cosObject = null;
+        try {
+            ObjectMetadata metadata = cosClient.getObjectMetadata(bucket, key);
+            long fileSize = metadata.getContentLength();
+            String contentType = metadata.getContentType();
+
+            response.setContentType(contentType != null ? contentType : "application/octet-stream");
+            response.setHeader("Content-Disposition", "inline");
+            response.setHeader("Accept-Ranges", "bytes");
+
+            InputStream inputStream;
+            long contentLength;
+
+            if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+                String range = rangeHeader.substring("bytes=".length());
+                String[] parts = range.split("-");
+                long start = Long.parseLong(parts[0]);
+                long end = parts.length > 1 && !parts[1].isEmpty() ? Long.parseLong(parts[1]) : fileSize - 1;
+
+                if (start >= fileSize) {
+                    response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+                    response.setHeader("Content-Range", "bytes */" + fileSize);
+                    return;
+                }
+                if (end >= fileSize) {
+                    end = fileSize - 1;
+                }
+
+                GetObjectRequest getRequest = new GetObjectRequest(bucket, key);
+                getRequest.setRange(start, end);
+                cosObject = cosClient.getObject(getRequest);
+                inputStream = cosObject.getObjectContent();
+                contentLength = end - start + 1;
+
+                response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+                response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileSize);
+                response.setContentLengthLong(contentLength);
+            } else {
+                cosObject = cosClient.getObject(bucket, key);
+                inputStream = cosObject.getObjectContent();
+                contentLength = fileSize;
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentLengthLong(contentLength);
+            }
+
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            try (OutputStream outputStream = response.getOutputStream()) {
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+                outputStream.flush();
+            } finally {
+                inputStream.close();
+            }
+        } finally {
+            if (cosObject != null) {
+                cosObject.close();
+            }
+            cosClient.shutdown();
+        }
     }
 }

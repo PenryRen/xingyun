@@ -150,8 +150,7 @@ def generate_intelligent_paper(
     return json.dumps(paper, ensure_ascii=False, indent=2)
 
 
-# 星火 HTTP 接口要求工具名不超过 32 个字符；保留 Python 函数名兼容既有导入。
-@tool("generate_enhanced_paper")
+@tool
 def generate_enhanced_paper_by_weak_points(
     student_name: str,
     student_id: str,

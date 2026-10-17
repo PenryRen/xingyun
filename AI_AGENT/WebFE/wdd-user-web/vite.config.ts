@@ -31,20 +31,12 @@ export default ({mode}: ConfigEnv): UserConfig => {
       port: 16001,
       open: true, // 运行自动打开浏览器
       proxy: {
-        // AI 后端 (本地 5000)
-        '/ai-agent': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/ai-agent/, '')
-        },
-        '/api/ai': {
-          target: 'http://localhost:5000',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/ai/, '')
-        },
-        // 其他后端
         '/api': {
           target: 'http://localhost:16000',
+          changeOrigin: true
+        },
+        '/ai-agent': {
+          target: 'http://127.0.0.1:8000',
           changeOrigin: true
         }
       }

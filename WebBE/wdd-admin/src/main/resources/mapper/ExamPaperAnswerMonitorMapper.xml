@@ -28,6 +28,7 @@
     update_time, exam_paper_archive_id, exam_paper_build_id, create_department_id, answer_frame_content
     from t_exam_paper_answer_monitor epam
     <where>
+      and exists ( select 1 from t_user u where epam.create_user = u.id and u.deleted = 0 )
       <if test="id != null">
        and exam_paper_build_id = #{id}
       </if>

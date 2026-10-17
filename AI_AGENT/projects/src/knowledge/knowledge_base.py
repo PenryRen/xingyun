@@ -4,6 +4,7 @@
 整合向量存储和文档处理功能，提供知识库的创建和查询
 """
 
+import os
 from typing import List, Optional, Dict, Any
 from langchain_core.documents import Document
 from knowledge.vector_store import VectorStore
@@ -19,10 +20,17 @@ class KnowledgeBase:
     
     def __init__(
         self,
-        word_dir: str = "AI_AGENT/projects/src/word",
-        index_path: str = "AI_AGENT/projects/src/knowledge/vector_index",
+        word_dir: str = None,
+        index_path: str = None,
         use_local: bool = True
     ):
+        # 基于当前文件位置计算绝对路径，避免依赖工作目录
+        _base = os.path.dirname(os.path.abspath(__file__))  # .../src/knowledge/
+        _src = os.path.dirname(_base)  # .../src/
+        if word_dir is None:
+            word_dir = os.path.join(_src, "word")
+        if index_path is None:
+            index_path = os.path.join(_base, "vector_index")
         """
         初始化知识库
         

@@ -34,7 +34,7 @@
                 </template>
             </el-dropdown>
         </div>
-        <div class="vm-expiration" :class="{'is-local-development': isLocalDevelopment}">{{expiration}}</div>
+        <div class="vm-expiration">{{expiration}}</div>
     </div>
 </template>
 <script setup lang="ts">
@@ -59,8 +59,7 @@ const router = useRouter();
 
 const sidebar = computed(() => app.sidebar);
 const userName = computed(() => user.userName);
-const isLocalDevelopment = import.meta.env.VITE_APP_LOCAL_DEVELOPMENT === 'true';
-const expiration = ref(isLocalDevelopment ? "本地开发模式（虚拟机功能已禁用）" : "");
+const expiration = ref("");
 
 function toggleSideBar() {
     app.toggleSidebar();
@@ -83,9 +82,6 @@ function logout() {
     });
 }
 function queryExpiration() {
-  if (isLocalDevelopment) {
-    return;
-  }
   getExpiration(null).then(re => {
     if (null != re.response) {
       expiration.value = "授权到期时间："+re.response;
@@ -187,12 +183,7 @@ ul {
     color: #5a5e66;
     float: right;
     line-height: 50px;
-    margin-right: 30px;
-
-    &.is-local-development {
-      color: #b26a00;
-      font-weight: 600;
-    }
+    margin-right: 30px
   }
 }
 </style>

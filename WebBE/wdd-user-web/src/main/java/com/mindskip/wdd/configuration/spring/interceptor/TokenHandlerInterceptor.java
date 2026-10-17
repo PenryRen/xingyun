@@ -66,10 +66,14 @@ public class TokenHandlerInterceptor implements HandlerInterceptor {
         try {
             String encodeToken = request.getHeader("token");
             if (StringUtils.isEmpty(encodeToken)) {
-                for (Cookie cookie : request.getCookies()) {
-                    if (cookie.getName().equals("ueit-user-web-token")) {
-                        encodeToken = cookie.getValue();
-                        break;
+                Cookie[] cookies = request.getCookies();
+                if (cookies != null) {
+                    for (Cookie cookie : cookies) {
+                        // 兼容开发环境(ueit-user-web-token)与生产环境(User-Token)两种 cookie 名
+                        if (cookie.getName().equals("ueit-user-web-token") || cookie.getName().equals("User-Token")) {
+                            encodeToken = cookie.getValue();
+                            break;
+                        }
                     }
                 }
                 if (StringUtils.isEmpty(encodeToken)) {

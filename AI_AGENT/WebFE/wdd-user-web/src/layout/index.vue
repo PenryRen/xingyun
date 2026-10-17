@@ -14,7 +14,7 @@
         <el-menu-item index="/paper/index">试卷中心</el-menu-item>
         <el-menu-item index="/train/index">培训中心</el-menu-item>
         <el-menu-item index="/record/index">考试记录</el-menu-item>
-        <el-menu-item index="/ai/index">AI 学习中心</el-menu-item>
+        <el-menu-item index="/ai/index">AI学习中心</el-menu-item>
       </el-menu>
       <div class="user-info">
         <el-dropdown placement="bottom">
@@ -23,7 +23,7 @@
               <User/>
             </el-icon>
             <span class="user-name">{{ userName }}</span>
-            <span class="real-name" v-if="realName !== null && realName !== 'null' && realName !== ''"> - {{
+            <span v-if="realName !== null && realName !== 'null' && realName !== ''"> - {{
                 realName
               }}</span>
           </div>
@@ -121,61 +121,9 @@
 </template>
 
 <style scoped>
-:deep(.el-menu-title) {
-  margin-left: 32px !important;
-}
-
-:deep(.el-menu--horizontal > .el-menu-item) {
-  padding: 0 14px;
-}
-
-@media (max-width: 1200px) {
-  :deep(.el-menu-title) {
-    margin-left: 8px !important;
-  }
-
-  :deep(.el-menu--horizontal > .el-menu-item) {
-    padding: 0 8px;
-    font-size: 14px !important;
-  }
-
-  .real-name {
-    display: none;
-  }
-}
-
-@media (max-width: 720px) {
-  .user-header {
-    overflow: hidden;
-  }
-
-  .logo {
-    flex: 0 0 auto;
-  }
-
-  :deep(.el-menu-title) {
-    width: 0;
-    min-width: 0;
-    flex: 1 1 auto;
-    margin-left: 0 !important;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-  }
-
-  :deep(.el-menu-title::-webkit-scrollbar) {
-    display: none;
-  }
-
-  .user-info {
-    flex: 0 0 auto;
-    margin-right: 8px !important;
-  }
-
-  .user-name {
-    display: none;
-  }
-}
+  /*.el-menu--horizontal{*/
+  /* height: auto;*/
+  /*}*/
 </style>
 <script setup lang="ts">
 import {watch, reactive, ref, toRefs} from 'vue';

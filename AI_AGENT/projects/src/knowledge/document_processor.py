@@ -26,10 +26,14 @@ class DocumentProcessor:
     
     def __init__(
         self,
-        word_dir: str = "AI_AGENT/projects/src/word",
+        word_dir: str = None,
         chunk_size: int = 1000,
         chunk_overlap: int = 100
     ):
+        if word_dir is None:
+            _base = os.path.dirname(os.path.abspath(__file__))
+            _src = os.path.dirname(_base)
+            word_dir = os.path.join(_src, "word")
         """
         初始化文档处理器
         

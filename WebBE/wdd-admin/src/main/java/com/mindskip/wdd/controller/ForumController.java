@@ -58,10 +58,14 @@ public class ForumController extends BaseApiController {
             String content = StrUtil.sub(HtmlUtil.clear(d.getContent()), 0, 300);
             forumPageResponseVM.setContent(content);
             User user = userService.getById(d.getCreateUser());
-            forumPageResponseVM.setCreateUserStr(String.format("%s - %s", user.getUserName(), user.getRealName()));
+            if (user != null) {
+                forumPageResponseVM.setCreateUserStr(String.format("%s - %s", user.getUserName(), user.getRealName()));
+            }
             if (null != d.getForumArchiveId()) {
                 ForumArchive forumArchive = forumArchiveService.getById(d.getForumArchiveId());
-                forumPageResponseVM.setForumArchiveStr(forumArchive.getLevel());
+                if (forumArchive != null) {
+                    forumPageResponseVM.setForumArchiveStr(forumArchive.getLevel());
+                }
             }
             return forumPageResponseVM;
         });
@@ -152,7 +156,9 @@ public class ForumController extends BaseApiController {
         PageInfo<ForumCommentPageResponseVM> page = PageInfoHelper.copyMap(pageInfo, d -> {
             ForumCommentPageResponseVM forumCommentPageResponseVM = forumMapping.toForumCommentPageResponseVM(d);
             User user = userService.getById(d.getCreateUser());
-            forumCommentPageResponseVM.setCreateUserStr(String.format("%s - %s", user.getUserName(), user.getRealName()));
+            if (user != null) {
+                forumCommentPageResponseVM.setCreateUserStr(String.format("%s - %s", user.getUserName(), user.getRealName()));
+            }
             return forumCommentPageResponseVM;
         });
         return RestResponse.ok(page);

@@ -29,14 +29,20 @@ system:
       bucket: wdd-1257364288
       secret-id:
       secret-key:
+    aliyun: #阿里云对象存储
+      endpoint: oss-cn-beijing.aliyuncs.com
+      url: https://big-event-zzzhang.oss-cn-beijing.aliyuncs.com
+      bucket: big-event-zzzhang
+      access-key-id: LTAI5t7QxocDg2RRNzGpMWab
+      access-key-secret: fIZt3tIfXuAM7YgHq2z9uzGdFT2mai
 
 server:
   port: 16002
   undertow:
     threads:
-      io: 4
-      worker: 16
-    buffer-size: 1024
+      io: 2
+      worker: 8
+    buffer-size: 512
     direct-buffers: true
   compression:
     enabled: true
@@ -85,8 +91,8 @@ spring:
     redis:
       time-to-live: 12h   #12 hour
   profiles:
-#    active:  prod
-    active:  dev
+#    active:  dev
+    active:  ${SPRING_PROFILES_ACTIVE:dev}
 
 
 

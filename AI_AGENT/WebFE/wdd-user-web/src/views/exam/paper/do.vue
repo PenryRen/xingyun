@@ -46,8 +46,8 @@
       <div v-show="!vmHide" class="paper-vm-content">
           <el-card shadow="never">
             <div class="paper-vm">
-              <iframe width="100%" height="100%" :src="vmUrl">
-              </iframe>
+              <iframe v-if="!wuyingMode" width="100%" height="100%" style="border:0" :src="vmUrl"></iframe>
+              <iframe v-show="wuyingMode" id="wuying-desktop-session" title="无影云桌面" width="100%" height="100%" style="border:0"></iframe>
             </div>
           </el-card>
       </div>
@@ -128,6 +128,7 @@ import QuestionDo from '../components/QuestionDo.vue'
 import {select, camera, cheat} from '@/api/examPaper'
 import {monitor, submit} from '@/api/examPaperAnswer'
 import {checkVmWare,getVmWare} from '@/api/vmWare'
+import {startWuyingDesktopSession} from '@/utils/wuyingDesktop'
 import Split from 'split.js'
 
 export default {
@@ -137,6 +138,8 @@ export default {
       paperNoneShow: true,
       vmHide:true,
       vmUrl:"",
+      wuyingMode: false,
+      lastRemoteResp: null,
       paper: {},
       answer: {},
       formLoading: false,
@@ -276,7 +279,9 @@ export default {
     setVmUrl(){
       getVmWare(this.vmQuery).then(re => {
         if (re.code === 1) {
-          this.vmUrl = re.response.url;
+          this.lastRemoteResp = re.response
+          this.wuyingMode = !!(re.response.useWuyingWebSdk && re.response.authCode)
+          this.vmUrl = this.wuyingMode ? '' : (re.response.url || '')
           this.answer.vmGuid = re.response.vmGuid;
           if (re.response.status !== "00" && re.response.msg != null && re.response.msg !== '') {
             this.$message.info(re.response.msg);
@@ -320,6 +325,11 @@ export default {
           sizes: [33, 67],
           minSize: [400,1100]
         });
+        if (this.wuyingMode && this.lastRemoteResp && this.lastRemoteResp.authCode) {
+          startWuyingDesktopSession(this.lastRemoteResp).catch(e => {
+            this.$message.error(e.message || '无影连接失败')
+          })
+        }
       });
     },
     cacheSave() {

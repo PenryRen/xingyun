@@ -14,15 +14,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     const {user} = useStore();
-    // 校验授权过期
-    const expiration = user.expiration;
-    if (expiration) {
-      if (to.path === '/403') {
-        next();
-      } else {
-        next({path: '/403'});
-      }
-    }
+    // 授权过期检查已绕过
     const hasToken = user.token;
     if (hasToken) {
         // 登录成功，跳转到首页

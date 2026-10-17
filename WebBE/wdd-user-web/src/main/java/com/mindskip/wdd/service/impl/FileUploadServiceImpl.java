@@ -5,20 +5,21 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ReUtil;
 import com.mindskip.wdd.service.FileUploadService;
 import com.mindskip.wdd.utility.DateTimeUtil;
-import com.qcloud.cos.COSClient;
-import com.qcloud.cos.ClientConfig;
-import com.qcloud.cos.auth.BasicCOSCredentials;
-import com.qcloud.cos.auth.COSCredentials;
-import com.qcloud.cos.model.ObjectMetadata;
-import com.qcloud.cos.model.PutObjectRequest;
-import com.qcloud.cos.region.Region;
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.GetObjectRequest;
+import com.aliyun.oss.model.OSSObject;
+import com.aliyun.oss.model.ObjectMetadata;
+import com.aliyun.oss.model.PutObjectRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
@@ -40,16 +41,16 @@ public class FileUploadServiceImpl implements FileUploadService {
     private String fileUrl;
     @Value("${system.resource.file.allow}")
     private String allow;
-    @Value("${system.resource.qcloud.region}")
-    private String region;
-    @Value("${system.resource.qcloud.url}")
+    @Value("${system.resource.aliyun.endpoint}")
+    private String endpoint;
+    @Value("${system.resource.aliyun.url}")
     private String url;
-    @Value("${system.resource.qcloud.bucket}")
+    @Value("${system.resource.aliyun.bucket}")
     private String bucket;
-    @Value("${system.resource.qcloud.secret-id}")
-    private String secretId;
-    @Value("${system.resource.qcloud.secret-key}")
-    private String secretKey;
+    @Value("${system.resource.aliyun.access-key-id}")
+    private String accessKeyId;
+    @Value("${system.resource.aliyun.access-key-secret}")
+    private String accessKeySecret;
     private final static String FOLDER_NAME_REGEX = "[A-Za-z0-9/-]{1,20}";
 
     @Override
@@ -81,9 +82,12 @@ public class FileUploadServiceImpl implements FileUploadService {
                 filePath += ("/" + UUID.randomUUID());
             }
             filePath += ("/" + fileName);
-            COSClient cosClient = getCOSClient();
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, filePath, file);
-            cosClient.putObject(putObjectRequest);
+            OSS ossClient = getOSSClient();
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentDisposition("inline");
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, filePath, file, metadata);
+            ossClient.putObject(putObjectRequest);
+            ossClient.shutdown();
             return String.format("%s/%s", url, filePath);
         }
     }
@@ -142,7 +146,7 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
 
     /**
-     * 腾讯云对象存储文件
+     * 阿里云对象存储文件
      *
      * @param url
      * @param inputStream
@@ -160,7 +164,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         if (!Arrays.stream(allow.split("\\|")).anyMatch(fe -> fileName.endsWith(fe))) {
             return null;
         }
-        COSClient cosClient = getCOSClient();
+        OSS ossClient = getOSSClient();
         String filePath = folder;
         if (timeSplit) {
             filePath += ("/" + DateTimeUtil.dateTimeNumberFormat(new Date()));
@@ -171,22 +175,94 @@ public class FileUploadServiceImpl implements FileUploadService {
         filePath += ("/" + fileName);
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.setContentLength(fileSize);
+        objectMetadata.setContentDisposition("inline");
         PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, filePath, inputStream, objectMetadata);
-        cosClient.putObject(putObjectRequest);
+        ossClient.putObject(putObjectRequest);
+        ossClient.shutdown();
         return String.format("%s/%s", url, filePath);
     }
 
     /**
-     * 获取腾讯云对象信息
+     * 获取阿里云对象存储信息
      *
-     * @return {@link COSClient}
+     * @return {@link OSS}
      */
-    private COSClient getCOSClient() {
-        COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
-        Region qRegion = new Region(region);
-        ClientConfig clientConfig = new ClientConfig(qRegion);
-        COSClient cosClient = new COSClient(cred, clientConfig);
-        return cosClient;
+    private OSS getOSSClient() {
+        return new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+    }
+
+    /**
+     * 流式输出 OSS 文件到响应，强制 Content-Disposition: inline，支持 Range 请求
+     * 用于绕过 OSS Bucket 强制下载开关，使视频/PDF 可在浏览器内联播放
+     */
+    @Override
+    public void streamOssFile(String key, HttpServletResponse response, String rangeHeader) throws IOException {
+        OSS ossClient = getOSSClient();
+        OSSObject ossObject = null;
+        try {
+            // 获取对象元数据（文件大小、Content-Type）
+            ObjectMetadata metadata = ossClient.getObjectMetadata(bucket, key);
+            long fileSize = metadata.getContentLength();
+            String contentType = metadata.getContentType();
+
+            // 通用响应头：强制 inline 播放
+            response.setContentType(contentType != null ? contentType : "application/octet-stream");
+            response.setHeader("Content-Disposition", "inline");
+            response.setHeader("Accept-Ranges", "bytes");
+
+            InputStream inputStream;
+            long contentLength;
+
+            if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+                // 解析 Range: bytes=start-end
+                String range = rangeHeader.substring("bytes=".length());
+                String[] parts = range.split("-");
+                long start = Long.parseLong(parts[0]);
+                long end = parts.length > 1 && !parts[1].isEmpty() ? Long.parseLong(parts[1]) : fileSize - 1;
+
+                if (start >= fileSize) {
+                    response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+                    response.setHeader("Content-Range", "bytes */" + fileSize);
+                    return;
+                }
+                if (end >= fileSize) {
+                    end = fileSize - 1;
+                }
+
+                GetObjectRequest getRequest = new GetObjectRequest(bucket, key);
+                getRequest.setRange(start, end);
+                ossObject = ossClient.getObject(getRequest);
+                inputStream = ossObject.getObjectContent();
+                contentLength = end - start + 1;
+
+                response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+                response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileSize);
+                response.setContentLengthLong(contentLength);
+            } else {
+                ossObject = ossClient.getObject(bucket, key);
+                inputStream = ossObject.getObjectContent();
+                contentLength = fileSize;
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentLengthLong(contentLength);
+            }
+
+            // 流式输出到响应
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            try (OutputStream outputStream = response.getOutputStream()) {
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+                outputStream.flush();
+            } finally {
+                inputStream.close();
+            }
+        } finally {
+            if (ossObject != null) {
+                ossObject.close();
+            }
+            ossClient.shutdown();
+        }
     }
 
 }

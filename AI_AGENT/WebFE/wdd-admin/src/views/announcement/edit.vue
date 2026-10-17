@@ -21,7 +21,7 @@
                    :data="{folder:'announcement'}"
                    :show-file-list="false" :on-progress="uploadProgress" :on-success="uploadImageSuccess"
                    :on-error="uploadError">
-          <el-image style="width: 288px; height: 176px" :src="form.imageSrc" fit="fill" v-if="imgRender">
+          <el-image style="width: 144px; height: 88px" :src="form.imageSrc" fit="fill" v-if="imgRender">
             <template #error>
               <div class="image-slot">
                 <el-icon>

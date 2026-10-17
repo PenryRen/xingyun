@@ -95,6 +95,15 @@
           <el-button v-if="row.status === '00' && row.vmType === '01'" @click="shutdown(row)" type="info" size="small" class="wdd-button-mini link-left"
                      v-has-perm="['vmWare:reStart']">关机
           </el-button>
+          <router-link
+            v-if="row.vmType === '00' && (row.vmParentId === null || row.vmParentId === undefined || row.vmParentId === '')"
+            :to="{ path: '/vmWare/edit', query: { id: row.id } }"
+            class="link-left"
+            style="margin-right: 6px"
+          >
+            <el-button type="primary" size="small" class="wdd-button-mini" v-has-perm="['vmWare:page', 'vmWare:import']">编辑模板
+            </el-button>
+          </router-link>
           <el-button v-if="row.vmType === '00'" @click="clone(row)" type="primary" size="small" class="wdd-button-mini link-left"
                      v-has-perm="['vmWare:clone']">克隆
           </el-button>
@@ -117,7 +126,7 @@
 </style>
 <script>
 
-import {PageList,shutdown,start,reStart,clone,release} from '@/api/vmWare'
+import {PageList, shutdown, start, reStart, clone, release, vmExport} from '@/api/vmWare'
 import {EnumMap} from "@/api/EnumMap";
 
 export default {

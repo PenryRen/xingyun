@@ -60,7 +60,7 @@ def _windowed_messages(old, new):
 class AgentState(MessagesState):
     messages: Annotated[list[AnyMessage], _windowed_messages]
 
-def build_agent(use_local: bool = False, ctx=None):
+def build_agent(use_local: bool = True, ctx=None):
     """
     构建教育平台多智能体系统
     
@@ -71,10 +71,11 @@ def build_agent(use_local: bool = False, ctx=None):
         use_local: 是否使用本地模型
         ctx: 上下文信息（可选）
     """
-    workspace_path = os.getenv("WORKSPACE_PATH", os.getcwd())
+    # 优先使用 PROJECT_ROOT（由 main.py 注入），不依赖 WORKSPACE_PATH（可能为相对路径）
+    project_root = os.getenv("PROJECT_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
     # 使用默认配置（办学助手作为默认模式）
-    config_path = os.path.join(workspace_path, "config/teaching_assistant_config.json")
+    config_path = os.path.join(project_root, "config", "teaching_assistant_config.json")
     
     if os.path.exists(config_path):
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -82,13 +83,16 @@ def build_agent(use_local: bool = False, ctx=None):
         model_name = cfg['config'].get("model")
         temperature = cfg['config'].get('temperature', 0.7)
         timeout = cfg['config'].get('timeout', 600)
-        max_tokens = cfg['config'].get('max_tokens', 8000)
     else:
         # 配置文件不存在时使用默认值
         model_name = None
         temperature = 0.7
         timeout = 600
-        max_tokens = 8000
+
+    # 环境变量 MODEL_NAME 优先级高于配置文件
+    env_model_name = os.getenv("MODEL_NAME")
+    if env_model_name:
+        model_name = env_model_name
     
     # 使用模型管理器初始化模型
     llm = ModelManager.get_llm(
@@ -96,8 +100,7 @@ def build_agent(use_local: bool = False, ctx=None):
         model_name=model_name,
         temperature=temperature,
         streaming=True,
-        timeout=timeout,
-        max_tokens=max_tokens
+        timeout=timeout
     )
     
     # 导入各个模块的Agent构建函数
@@ -161,7 +164,7 @@ def build_agent(use_local: bool = False, ctx=None):
 ## 3. 学情检测模块
 当用户请求生成试卷、进行测试、强化训练时，使用此模块。
 - 使用 generate_intelligent_paper 智能组卷
-- 使用 generate_enhanced_paper 强化测试
+- 使用 generate_enhanced_paper_by_weak_points 强化测试
 - 使用 get_question_bank 查看题库
 
 ## 4. 办学助手模块（默认模块）
@@ -221,7 +224,7 @@ def build_agent(use_local: bool = False, ctx=None):
         checkpointer=get_memory_saver(),
     )
 
-def get_agent_by_request(request: str, use_local: bool = False):
+def get_agent_by_request(request: str, use_local: bool = True):
     """
     根据用户请求选择合适的Agent模块
     

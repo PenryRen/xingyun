@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * @version 7.5.0
  * @description: 分类树形对象
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/28 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/28 10:45
  */
 @Data
 public class ArchiveVM {

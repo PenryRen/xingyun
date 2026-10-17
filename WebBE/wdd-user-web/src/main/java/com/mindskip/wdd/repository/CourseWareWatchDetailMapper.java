@@ -9,8 +9,8 @@ import java.util.Date;
 /**
  * @version 5.9.0
  * @description: 课件观看详情
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/3 11:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/3 11:45
  */
 @Mapper
 public interface CourseWareWatchDetailMapper extends BaseMapper<CourseWareWatchDetail> {

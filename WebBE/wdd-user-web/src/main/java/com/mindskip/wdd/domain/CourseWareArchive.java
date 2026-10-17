@@ -8,8 +8,8 @@ import java.util.Date;
 /**
  * @version 10.0.0
  * @description: 课件分类
- * Copyright (C), 2024, 麒技团队
- * @date 2024/12/16 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/12/16 10:45
  */
 @Getter
 @Setter

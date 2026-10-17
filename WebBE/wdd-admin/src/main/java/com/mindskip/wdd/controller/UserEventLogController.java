@@ -77,8 +77,10 @@ public class UserEventLogController extends BaseApiController {
         PageInfo<FeedbackPageResponseVM> page = PageInfoHelper.copyMap(pageInfo, d -> {
             FeedbackPageResponseVM feedbackPageResponseVM = userEventLogMapping.toFeedbackPageResponseVM(d);
             User user = userService.getById(d.getCreateUser());
-            feedbackPageResponseVM.setUserName(user.getUserName());
-            feedbackPageResponseVM.setRealName(user.getRealName());
+            if (null != user) {
+                feedbackPageResponseVM.setUserName(user.getUserName());
+                feedbackPageResponseVM.setRealName(user.getRealName());
+            }
             if (null != d.getDepartmentId()) {
                 Department department = departmentService.getById(d.getDepartmentId());
                 if (null != department) {

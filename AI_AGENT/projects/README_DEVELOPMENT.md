@@ -56,8 +56,12 @@
 
 ## 技术架构
 
+数据库迁移的表映射、最小权限、部署验证和回退流程见 `MYSQL_DATABASE_MIGRATION.md`。
+
 ### 数据库层
-- 使用 Supabase 作为数据库
+- 复用项目现有 `wdd` MySQL，使用 SQLAlchemy + PyMySQL
+- WebBE 学情数据通过固定、参数化的只读查询访问
+- Agent 自有数据存放在隔离的 `ai_*` 表中
 - 支持完整的 CRUD 操作
 - 数据关系完整，支持复杂查询
 
@@ -143,9 +147,12 @@
 │   │   └── exam_recorder_tool.py    # 试卷入库工具
 │   ├── storage/
 │   │   └── database/
-│   │       ├── supabase_client.py   # Supabase 客户端
+│   │       ├── mysql_client.py      # 统一 MySQL 连接池
+│   │       ├── db.py                # SQLAlchemy Session 兼容层
 │   │       └── shared/
 │   │           └── model.py         # 数据库模型定义
+│   ├── migrations/
+│   │   └── 001_mysql_ai_tables.sql  # Agent 自有 ai_* 表
 │   └── utils/                       # 工具函数
 ├── config/
 │   ├── exam_analysis_config.json    # 考试分析配置
@@ -158,8 +165,8 @@
 ## 使用说明
 
 ### 初始化
-1. 确保 Supabase 数据库已配置
-2. 运行 `coze-coding-ai db upgrade` 同步数据库
+1. 在 `.env` 中配置项目现有 MySQL 的 `XINGYUN_MYSQL_*` 变量
+2. 执行 `migrations/001_mysql_ai_tables.sql`，或在本地启用安全的自动建表
 3. 配置环境变量（API Key、Base URL）
 
 ### 添加题目到题库

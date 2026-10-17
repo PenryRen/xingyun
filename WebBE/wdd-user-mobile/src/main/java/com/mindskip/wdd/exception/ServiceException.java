@@ -4,7 +4,7 @@ package com.mindskip.wdd.exception;
  * 业务异常
  *
  * @author libl
- * @date 2024-04-15
+ * @date 2025-04-15
  */
 public final class ServiceException extends RuntimeException {
     private static final long serialVersionUID = 1L;

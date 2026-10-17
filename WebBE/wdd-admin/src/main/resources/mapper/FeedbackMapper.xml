@@ -5,6 +5,7 @@
     <select id="page" resultType="com.mindskip.wdd.domain.Feedback" parameterType="com.mindskip.wdd.viewmodel.user.FeedbackPageRequestVM">
         select  *  from t_feedback
         <where>
+            and exists ( select 1 from t_user u where u.id = t_feedback.create_user and u.deleted = 0 )
             <if test="departmentIdList != null and departmentIdList.size > 0">
                 and  department_id in
                 <foreach collection="departmentIdList" separator="," open="(" close=")" item="id">

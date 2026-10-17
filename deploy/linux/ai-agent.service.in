@@ -1,0 +1,26 @@
+[Unit]
+Description=linhang AI Agent Python 服务
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@@RUN_USER@@
+Group=@@RUN_USER@@
+WorkingDirectory=@@INSTALL_ROOT@@/ai-agent
+Environment=COZE_WORKSPACE_PATH=@@INSTALL_ROOT@@/ai-agent
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=@@INSTALL_ROOT@@/ai-agent/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+EnvironmentFile=-@@INSTALL_ROOT@@/ai-agent/.env
+ExecStart=/bin/bash @@INSTALL_ROOT@@/ai-agent/scripts/http_run.sh -p @@AI_AGENT_PORT@@
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=0 143
+TimeoutStopSec=60
+
+LimitNOFILE=65535
+NoNewPrivileges=yes
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

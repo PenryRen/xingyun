@@ -10,7 +10,7 @@ import java.util.List;
  * 用户课件功能点Mapper接口
  * 
  * @author libl
- * @date 2024-04-09
+ * @date 2025-04-09
  */
 @Mapper
 public interface TrainItemUserQuestionMapper extends BaseMapper<TrainItemUserQuestion>

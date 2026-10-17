@@ -107,7 +107,7 @@ export const constantRoutes: Array<RouteRecordRaw> = [
         path: '/vmWare/edit',
         name: '/vmWare/edit',
         component: () => import('@/views/vmWare/edit.vue'),
-        meta: {title: '添加虚拟机', hidden: true, noCache: true}
+        meta: {title: '编辑云桌面模板', hidden: true, noCache: true}
     },
 ];
 

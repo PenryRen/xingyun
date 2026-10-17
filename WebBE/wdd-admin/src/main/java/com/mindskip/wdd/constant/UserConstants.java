@@ -4,7 +4,7 @@ package com.mindskip.wdd.constant;
  * 用户常量信息
  *
  * @author libl
- * @date 2024-04-15
+ * @date 2025-04-15
  */
 public class UserConstants {
     /**

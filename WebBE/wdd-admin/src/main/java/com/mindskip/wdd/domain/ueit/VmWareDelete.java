@@ -8,7 +8,7 @@ import java.util.List;
  * 虚拟机删除 请求参数
  *
  * @author libl
- * @date 2024-04-18
+ * @date 2025-04-18
  */
 @Data
 public class VmWareDelete {

@@ -1,0 +1,29 @@
+[Unit]
+Description=linhang (麒麟智训) 后端 Java 服务
+Documentation=file:@@INSTALL_ROOT@@/be/README.txt
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@@RUN_USER@@
+Group=@@RUN_USER@@
+WorkingDirectory=@@INSTALL_ROOT@@/be
+ExecStart=@@INSTALL_ROOT@@/be/start.sh
+Restart=on-failure
+RestartSec=10
+SuccessExitStatus=0 143
+TimeoutStopSec=120
+
+# 确保能调用 java
+Environment=JAVA_TOOL_OPTIONS=
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=SPRING_PROFILES_ACTIVE=prod
+
+LimitNOFILE=65535
+
+NoNewPrivileges=yes
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -11,7 +11,7 @@ import java.util.List;
  * 虚拟机 Mapper接口
  *
  * @author libl
- * @date 2024-04-08
+ * @date 2025-04-08
  */
 @Mapper
 public interface VmWareMapper extends BaseMapper<VmWare> {

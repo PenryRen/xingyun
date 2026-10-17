@@ -25,8 +25,8 @@ import java.util.List;
 /**
  * @version 6.5.0
  * @description: 答卷监考
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/25 10:45
  */
 @RestController
 @AllArgsConstructor
@@ -57,16 +57,24 @@ public class ExamPaperMonitorController extends BaseApiController {
         PageInfo<PaperMonitorPageResponseVM> page = PageInfoHelper.copyMap(pageInfo, paperAnswerMonitor -> {
             PaperMonitorPageResponseVM paperMonitorPageResponseVM = examPaperAnswerMapping.toPaperMonitorPageResponseVM(paperAnswerMonitor);
             ExamPaperBuild examPaperBuild = examPaperBuildService.getById(paperAnswerMonitor.getExamPaperBuildId());
-            paperMonitorPageResponseVM.setPaperName(examPaperBuild.getName());
-            paperMonitorPageResponseVM.setCapture(examPaperBuild.getBuildConfig().getCapture());
+            if (null != examPaperBuild) {
+                paperMonitorPageResponseVM.setPaperName(examPaperBuild.getName());
+                if (null != examPaperBuild.getBuildConfig()) {
+                    paperMonitorPageResponseVM.setCapture(examPaperBuild.getBuildConfig().getCapture());
+                }
+            }
             User user = userService.getById(paperAnswerMonitor.getCreateUser());
-            paperMonitorPageResponseVM.setUserName(user.getUserName());
-            paperMonitorPageResponseVM.setRealName(user.getRealName());
-            paperMonitorPageResponseVM.setIdCard(user.getIdCard());
-            paperMonitorPageResponseVM.setImagePath(user.getImagePath());
+            if (null != user) {
+                paperMonitorPageResponseVM.setUserName(user.getUserName());
+                paperMonitorPageResponseVM.setRealName(user.getRealName());
+                paperMonitorPageResponseVM.setIdCard(user.getIdCard());
+                paperMonitorPageResponseVM.setImagePath(user.getImagePath());
+            }
             if (null != paperAnswerMonitor.getCreateDepartmentId()) {
                 Department department = departmentService.getById(paperAnswerMonitor.getCreateDepartmentId());
-                paperMonitorPageResponseVM.setDepartmentLevel(department.getLevel());
+                if (null != department) {
+                    paperMonitorPageResponseVM.setDepartmentLevel(department.getLevel());
+                }
             }
             return paperMonitorPageResponseVM;
         });

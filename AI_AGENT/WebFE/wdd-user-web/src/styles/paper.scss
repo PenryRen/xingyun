@@ -1,0 +1,265 @@
+.do-exam-title-tag {
+  margin: 0 3px 6px;
+  cursor: pointer;
+  width: 36px;
+  text-align: center;
+  border-radius: 0px;
+  padding: 0px;
+}
+
+
+.exam-paper-item-box {
+  padding: 30px;
+  font-size: 14px;
+  color: #4c596b;
+
+  .exam-paper-item-box-contain-line {
+    border-bottom: 1px solid #DEDEDE;
+  }
+
+  .exam-paper-item-box-contain {
+    display: flex;
+    flex-direction: row;
+    padding: 30px 0px;
+
+    .itemOrder {
+      margin-right: 15px;
+      font-size: 15px;
+    }
+
+    .title-contain {
+      flex: 1;
+    }
+  }
+}
+
+
+.wdd-paper-contain {
+  display: flex;
+  flex-direction: row;
+  background-color: #eff3f7;
+  padding: 20px 90px 20px 90px;
+  min-height: 100%;
+
+  .paper-item-order-fake {
+    width: 270px;
+    height: 100%;
+  }
+
+
+  .paper-item-order {
+    width: 270px;
+    height: 100%;
+    position: fixed;
+    z-index: 999;
+
+    .el-card {
+      height: calc(100% - 40px) !important;
+      overflow: auto;
+
+      .paper-item-order-content {
+        display: flex;
+        flex-direction: column;
+
+        .paper-name {
+          font-size: 18px;
+          color: #27274A;
+          padding-bottom: 10px;
+        }
+
+        .paper-info {
+          font-size: 14px;
+          padding: 10px 0px;
+
+          div {
+            margin-bottom: 4px;
+          }
+        }
+      }
+
+      .wdd-anchor-title {
+        margin-top: 5px;
+        font-size: 14px;
+      }
+
+      .wdd-question-anchor {
+        padding: 15px 0px;
+      }
+
+      .wdd-split {
+        width: 100%;
+        border-bottom: 1px solid #E6E6E6;
+      }
+    }
+  }
+
+  .paper-question-content {
+    flex: 1;
+    background-color: white;
+    margin-left: 20px;
+
+    .el-card {
+      border-top: 0px !important;
+      border-radius: 0px;
+
+      .el-card__body {
+        padding: 0px !important;
+
+        .wdd-paper-title {
+          font-size: 18px;
+          line-height: 25px;
+          padding: 18px 20px;
+          background: #FAFAFA;
+          border-top: 1px solid #DEDEDE;
+          border-bottom: 1px solid #DEDEDE;
+        }
+
+
+        .el-radio-group {
+          align-items: baseline;
+
+          .el-radio {
+            height: 100%;
+            align-items: baseline;
+
+            .el-radio__label {
+              display: flex;
+            }
+          }
+        }
+
+
+        .el-checkbox-group {
+          align-items: baseline;
+
+          .el-checkbox {
+            height: 100%;
+            align-items: baseline;
+
+            .el-checkbox__label {
+              display: flex;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .paper-info-submit-fake {
+    width: 225px;
+    height: 100%;
+  }
+
+
+  .paper-info-submit {
+    width: 225px;
+    height: 100%;
+    position: fixed;
+
+    .el-card {
+      height: calc(100% - 40px) !important;
+      overflow: auto;
+
+      .exam-paper-camera {
+        margin-bottom: 10px;
+      }
+
+      .paper-name {
+        font-size: 18px;
+        color: #27274A;
+        padding-bottom: 10px;
+      }
+
+      .paper-info {
+        font-size: 14px;
+        padding: 10px 0px;
+
+        div {
+          margin-bottom: 4px;
+        }
+      }
+
+      .wdd-remain-time {
+        padding: 15px 0px;
+        text-align: center;
+
+        .wdd-remain-time-label {
+          font-size: 14px;
+          font-weight: 400;
+        }
+
+        .wdd-remain-time-content {
+          margin-top: 5px;
+          font-size: 18px;
+          line-height: 22px;
+          color: #FF0000;
+          font-weight: 400;
+        }
+      }
+
+      .wdd-submit {
+        text-align: center;
+        padding: 30px 0px;
+
+        .wdd-paper-submit {
+          width: 120px;
+          height: 35px;
+        }
+      }
+
+      .wdd-split {
+        width: 100%;
+        border-bottom: 1px solid #E6E6E6;
+      }
+    }
+  }
+}
+
+
+.wdd-form-question-select {
+  .el-radio__label {
+    display: flex;
+  }
+
+  .el-checkbox__label {
+    display: flex;
+  }
+}
+
+.wdd-form-question-short-answer {
+  margin-top: 10px;
+
+  .editor {
+    width: 100% !important;
+  }
+}
+
+.wdd-line-height {
+  height: 20px;
+}
+
+
+.face-div {
+  width: 100%;
+  background-color: #FFFFFF;
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
+
+  .face-dialog {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    .face-button {
+      margin: 10px 0px;
+    }
+  }
+}
+
+.paper-edit-content {
+  margin-right: 20px;
+}
+

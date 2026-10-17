@@ -6,7 +6,7 @@ import lombok.Data;
  * 虚拟机硬盘信息
  *
  * @author libl
- * @date 2024-04-10
+ * @date 2025-04-10
  */
 @Data
 public class Disk {

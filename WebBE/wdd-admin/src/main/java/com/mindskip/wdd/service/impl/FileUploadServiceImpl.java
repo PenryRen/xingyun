@@ -5,13 +5,10 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ReUtil;
 import com.mindskip.wdd.service.FileUploadService;
 import com.mindskip.wdd.utility.DateTimeUtil;
-import com.qcloud.cos.COSClient;
-import com.qcloud.cos.ClientConfig;
-import com.qcloud.cos.auth.BasicCOSCredentials;
-import com.qcloud.cos.auth.COSCredentials;
-import com.qcloud.cos.model.ObjectMetadata;
-import com.qcloud.cos.model.PutObjectRequest;
-import com.qcloud.cos.region.Region;
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.ObjectMetadata;
+import com.aliyun.oss.model.PutObjectRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -26,8 +23,8 @@ import java.util.UUID;
 /**
  * @version 1.7.0
  * @description: 文件上传
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 @Service
 public class FileUploadServiceImpl implements FileUploadService {
@@ -40,16 +37,16 @@ public class FileUploadServiceImpl implements FileUploadService {
     private String fileUrl;
     @Value("${system.resource.file.allow}")
     private String allow;
-    @Value("${system.resource.qcloud.region}")
-    private String region;
-    @Value("${system.resource.qcloud.url}")
+    @Value("${system.resource.aliyun.endpoint}")
+    private String endpoint;
+    @Value("${system.resource.aliyun.url}")
     private String url;
-    @Value("${system.resource.qcloud.bucket}")
+    @Value("${system.resource.aliyun.bucket}")
     private String bucket;
-    @Value("${system.resource.qcloud.secret-id}")
-    private String secretId;
-    @Value("${system.resource.qcloud.secret-key}")
-    private String secretKey;
+    @Value("${system.resource.aliyun.access-key-id}")
+    private String accessKeyId;
+    @Value("${system.resource.aliyun.access-key-secret}")
+    private String accessKeySecret;
     private final static String FOLDER_NAME_REGEX = "[A-Za-z0-9/-]{1,30}";
 
     @Override
@@ -71,7 +68,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             FileUtil.mkdir(String.format("%s/%s", fileLocation, directory));
             File destFile = new File(String.format("%s/%s/%s", fileLocation, directory, fileName));
             FileUtil.copyFile(file, destFile);
-            return String.format("%s/%s/%s", fileUrl, directory, fileName);
+            return String.format("%s/%s/%s", fileUrl, directory, fileName).replace("https://", "http://");
         } else {
             String filePath = folder;
             if (timeSplit) {
@@ -81,10 +78,13 @@ public class FileUploadServiceImpl implements FileUploadService {
                 filePath += ("/" + UUID.randomUUID());
             }
             filePath += ("/" + fileName);
-            COSClient cosClient = getCOSClient();
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, filePath, file);
-            cosClient.putObject(putObjectRequest);
-            return String.format("%s/%s", url, filePath);
+            OSS ossClient = getOSSClient();
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentDisposition("inline");
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, filePath, file, metadata);
+            ossClient.putObject(putObjectRequest);
+            ossClient.shutdown();
+            return String.format("%s/%s", url, filePath).replace("https://", "http://");
         }
     }
 
@@ -160,7 +160,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         if (!Arrays.stream(allow.split("\\|")).anyMatch(fe -> fileName.endsWith(fe))) {
             return null;
         }
-        COSClient cosClient = getCOSClient();
+        OSS ossClient = getOSSClient();
         String filePath = folder;
         if (timeSplit) {
             filePath += ("/" + DateTimeUtil.dateTimeNumberFormat(new Date()));
@@ -171,22 +171,20 @@ public class FileUploadServiceImpl implements FileUploadService {
         filePath += ("/" + fileName);
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.setContentLength(fileSize);
+        objectMetadata.setContentDisposition("inline");
         PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, filePath, inputStream, objectMetadata);
-        cosClient.putObject(putObjectRequest);
-        return String.format("%s/%s", url, filePath);
+        ossClient.putObject(putObjectRequest);
+        ossClient.shutdown();
+        return String.format("%s/%s", url, filePath).replace("https://", "http://");
     }
 
     /**
-     * 获取腾讯云对象存储信息
+     * 获取阿里云对象存储信息
      *
-     * @return {@link COSClient}
+     * @return {@link OSS}
      */
-    private COSClient getCOSClient() {
-        COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
-        Region qRegion = new Region(region);
-        ClientConfig clientConfig = new ClientConfig(qRegion);
-        COSClient cosClient = new COSClient(cred, clientConfig);
-        return cosClient;
+    private OSS getOSSClient() {
+        return new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
     }
 
 }

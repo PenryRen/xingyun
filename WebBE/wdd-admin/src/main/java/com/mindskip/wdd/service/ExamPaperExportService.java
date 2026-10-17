@@ -5,8 +5,8 @@ import com.mindskip.wdd.viewmodel.exam.answer.ExamPaperAnswerEditResponseVM;
 /**
  * @version 5.9.0
  * @description: 试卷导出
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/3 11:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/3 11:45
  */
 public interface ExamPaperExportService {
 

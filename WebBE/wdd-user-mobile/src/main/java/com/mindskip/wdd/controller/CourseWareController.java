@@ -17,14 +17,17 @@ import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Date;
 import java.util.List;
 
 /**
  * @version 1.7.0
  * @description: 课件
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 @RestController
 @AllArgsConstructor
@@ -51,6 +54,9 @@ public class CourseWareController extends BaseApiController {
         CourseWareWatch courseWareWatch = courseWareService.getCourseWareWatch(getCurrentUser().getId(), id);
         CourseWare course = courseWareService.getById(id);
         CourseWareVM courseWareVM = courseWareMapping.toCourseWareVm(course);
+        // 将 COS 直链改写为后端代理地址，绕过 COS 强制下载，使视频/PDF 可内联播放
+        courseWareVM.setOriginalPath(toProxyUrl(courseWareVM.getOriginalPath()));
+        courseWareVM.setPreviewPath(toProxyUrl(courseWareVM.getPreviewPath()));
         courseWareVM.setCurrentTime(courseWareWatch == null || courseWareWatch.getWatchCurrentTime() == null ? 0 : courseWareWatch.getWatchCurrentTime());
         User create = userService.getById(course.getCreateUser());
         courseWareVM.setCreateUserName(create.getUserName());
@@ -59,6 +65,35 @@ public class CourseWareController extends BaseApiController {
         List<CourseWareQuestionVM> courseWareQuestionVMList = courseWareService.getCourseWareQuestion(id);
         courseWareVM.setCourseWareQuestionVMList(courseWareQuestionVMList);
         return RestResponse.ok(systemService.aesEncrypt(courseWareVM));
+    }
+
+    /**
+     * 将 COS 直链转换为后端流式代理地址
+     * 例如 https://bucket.cos.region.myqcloud.com/bilibili/xxx.mp4
+     *      -> /api/upload/file/stream?path=bilibili%2Fxxx.mp4
+     */
+    private String toProxyUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return url;
+        }
+        int idx = url.indexOf("myqcloud.com/");
+        if (idx < 0) {
+            // 兼容阿里云 OSS 域名
+            idx = url.indexOf("aliyuncs.com/");
+        }
+        if (idx < 0) {
+            return url;
+        }
+        String key = url.substring(idx + (url.contains("myqcloud.com") ? "myqcloud.com/" : "aliyuncs.com/").length());
+        try {
+            try {
+                key = URLDecoder.decode(key, "UTF-8");
+            } catch (IllegalArgumentException ignored) {
+            }
+            return "/api/upload/file/stream?path=" + URLEncoder.encode(key, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return url;
+        }
     }
 
 

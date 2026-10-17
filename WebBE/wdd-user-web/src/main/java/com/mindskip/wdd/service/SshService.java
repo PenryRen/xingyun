@@ -8,7 +8,7 @@ import com.mindskip.wdd.domain.ueit.SshResult;
  * ssh模块Service接口
  *
  * @author libl
- * @date 2024-04-07
+ * @date 2025-04-07
  */
 public interface SshService {
 

@@ -5,7 +5,7 @@ import lombok.Data;
 /**
  * @version 7.3.0
  * @description: 答卷分布
- * Copyright (C), 2024, 麒技团队
+ * Copyright (C), 2025, 麟航团队
  * @date 2000/9/19 15:45
  */
 @Data

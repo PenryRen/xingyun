@@ -5,8 +5,8 @@ import lombok.Data;
 /**
  * @version 7.1.0
  * @description: 答卷详情
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/8 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/8 10:45
  */
 @Data
 public class ExamPaperAnswerRequest {

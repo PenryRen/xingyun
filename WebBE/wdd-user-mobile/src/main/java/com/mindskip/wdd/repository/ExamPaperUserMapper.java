@@ -8,8 +8,8 @@ import org.apache.ibatis.annotations.Param;
 /**
  * @version 4.1.0
  * @description: 试卷用户
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/25 10:45
  */
 @Mapper
 public interface ExamPaperUserMapper extends BaseMapper<ExamPaperUser> {

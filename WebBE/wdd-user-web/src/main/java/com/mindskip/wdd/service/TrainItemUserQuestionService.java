@@ -7,7 +7,7 @@ import java.util.List;
  * 用户课件功能点Service接口
  * 
  * @author libl
- * @date 2024-04-09
+ * @date 2025-04-09
  */
 public interface TrainItemUserQuestionService
 {

@@ -1,0 +1,267 @@
+.user-header {
+  padding: 0px !important;
+  display: flex;
+  height: 55px !important;
+
+  .logo {
+    margin: 2px 5px;
+    height: 46px;
+  }
+
+  .el-menu-title {
+    margin-left: 70px;
+    border-bottom: 0px !important;
+
+    .el-menu-item {
+      height: 55px;
+      line-height: 55px;
+      font-size: 16px !important;
+      --el-menu-hover-bg-color: transparent;
+    }
+
+    .el-menu-item:hover {
+      color: #68bfd6;
+    }
+  }
+
+  .user-info {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex: 1;
+    color: #192330;
+    margin-right: 30px;
+
+
+    .user-info-name {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      outline: none;
+    }
+
+    .user-name {
+      margin-left: 10px;
+      font-size: 15px
+    }
+  }
+}
+
+
+.user-main {
+  padding: 0px 0px 50px 0px !important;
+  background-color: #f8f8f8;
+}
+
+
+@media only screen and (max-width: 768px) {
+  .user-footer {
+    padding: 5px 20px;
+  }
+}
+
+
+@media only screen and (min-width: 768px) and (max-width: 1200px) {
+  .user-footer {
+    padding: 5px 70px;
+  }
+}
+
+
+@media only screen and (min-width: 1200px) {
+  .user-footer {
+    padding: 5px 150px;
+  }
+}
+
+
+.user-footer {
+  background-color: #EAECEF;
+  width: 100%;
+  box-sizing: border-box;
+
+  .container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    height: 228px;
+    padding-top: 40px;
+
+    .left {
+      display: flex;
+      flex-direction: row;
+
+      .footer-main {
+        display: flex;
+        flex-direction: column;
+        margin-right: 100px;
+
+        span {
+          color: #666;
+          font-size: 13px;
+          margin-bottom: 12px;
+        }
+
+        a {
+          color: #666;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 24px;
+        }
+      }
+    }
+
+    .right {
+      td {
+        text-align: center;
+        width: 130px;
+      }
+
+      span {
+        text-align: center;
+        color: #333;
+        line-height: 30px;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+.foot-copyright {
+  background: #EAECEF;
+  border-top: 1px solid #d2d2d2;
+  text-align: center;
+  width: 100%;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  font-size: 14px;
+
+  span {
+    line-height: 20px;
+    color: #666;
+    margin: 0px 5px;
+  }
+
+  p {
+    color: #666;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .app-item-contain {
+    padding: 30px 0px 0px 0px;
+  }
+
+  .app-contain {
+    padding: 30px 0px 0px 0px;
+  }
+}
+
+
+@media only screen and (min-width: 768px) {
+  .app-item-contain {
+    padding: 30px 30px 0px 30px;
+  }
+
+  .app-contain {
+    padding: 30px 30px 0px 30px;
+  }
+}
+
+@media only screen and (min-width: 1200px) {
+  .app-item-contain {
+    padding: 30px 100px 0px 100px;
+  }
+
+  .app-contain {
+    padding: 30px 100px 0px 100px;
+  }
+}
+
+
+@media only screen and (min-width: 1920px) {
+  .app-item-contain {
+    padding: 30px 200px 0px 200px;
+  }
+
+  .app-contain {
+    padding: 30px 100px 0px 100px;
+  }
+}
+
+
+.app-item-contain {
+  .el-card {
+    overflow: visible;
+    cursor: default;
+  }
+}
+
+
+.user-footer-line {
+  height: 80px;
+  background-color: rgba(29, 41, 52, .9);
+  padding-top: 22px;
+
+  .line-icon {
+    position: relative;
+
+    div {
+      position: absolute;
+      left: -60px;
+      top: -5px;
+
+      img {
+        width: 50px;
+        height: 50px;
+      }
+    }
+  }
+
+  .title {
+    font-weight: 400;
+    font-size: 16px;
+    color: #fff;
+  }
+
+  .description {
+    font-size: 13px;
+    color: #D2D2D2;
+    margin-top: 8px;
+  }
+}
+
+.feedback-link {
+  cursor: pointer;
+}
+
+.feedback-dialog {
+  .el-dialog__body {
+    padding: 25px 25px 10px 30px !important;
+  }
+}
+
+.wdd-link {
+  cursor: pointer;
+  text-decoration: none;
+  color: #303133;
+}
+
+.wdd-primary-button-color {
+  background-color: #68bfd6 !important;
+  border-color: #68bfd6 !important;
+  border: 0px !important;
+  border-radius: 0px !important;
+}
+
+
+.wdd-primary-button {
+  border: 0px !important;
+  border-radius: 0px !important;
+}
+
+
+.page-list-top {
+  margin-top: 20px;
+}

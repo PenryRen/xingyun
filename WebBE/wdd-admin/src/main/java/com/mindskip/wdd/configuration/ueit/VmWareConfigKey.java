@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  * 虚拟机缓存键 配置类
  *
  * @author libl
- * @date 2024-04-15
+ * @date 2025-04-15
  */
 @ConfigurationProperties(prefix = "vm-ware.config-key")
 @Configuration

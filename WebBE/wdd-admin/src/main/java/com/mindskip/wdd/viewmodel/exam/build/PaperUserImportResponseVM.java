@@ -7,8 +7,8 @@ import java.util.List;
 /**
  * @version 8.6.0
  * @description: 试卷用户导入
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/6 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/6 10:45
  */
 @Data
 public class PaperUserImportResponseVM {

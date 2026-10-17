@@ -6,8 +6,8 @@ import lombok.Data;
 /**
  * @version 2.0.0
  * @description: 我的评论
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/12 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/12 10:45
  */
 @Data
 public class CommentPageRequestVM extends BasePage {

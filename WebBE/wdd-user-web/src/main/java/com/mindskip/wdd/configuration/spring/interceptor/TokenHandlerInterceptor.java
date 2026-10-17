@@ -25,8 +25,8 @@ import java.util.Date;
 /**
  * @version 1.7.0
  * @description: 权限验证拦截器
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 @Component
 public class TokenHandlerInterceptor implements HandlerInterceptor {
@@ -66,10 +66,14 @@ public class TokenHandlerInterceptor implements HandlerInterceptor {
         try {
             String encodeToken = request.getHeader("token");
             if (StringUtils.isEmpty(encodeToken)) {
-                for (Cookie cookie : request.getCookies()) {
-                    if (cookie.getName().equals("ueit-user-web-token")) {
-                        encodeToken = cookie.getValue();
-                        break;
+                Cookie[] cookies = request.getCookies();
+                if (cookies != null) {
+                    for (Cookie cookie : cookies) {
+                        // 兼容开发环境(ueit-user-web-token)与生产环境(User-Token)两种 cookie 名
+                        if (cookie.getName().equals("ueit-user-web-token") || cookie.getName().equals("User-Token")) {
+                            encodeToken = cookie.getValue();
+                            break;
+                        }
                     }
                 }
                 if (StringUtils.isEmpty(encodeToken)) {

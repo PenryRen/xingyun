@@ -20,8 +20,8 @@ import java.util.*;
 /**
  * @version 1.7.0
  * @description: 题目分类接口
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 @RestController
 @AllArgsConstructor
@@ -43,17 +43,17 @@ public class QuestionArchiveController extends BaseApiController {
 
         Map<String,Object> a1 = new HashMap<>();
         a1.put("value","11");
-        a1.put("label","KylinV10_2024");
+        a1.put("label","KylinV10_2025");
         archiveVMList.add(a1);
 
         Map<String,Object> a2 = new HashMap<>();
         a2.put("value","22");
-        a2.put("label","KylinV10_2024_01");
+        a2.put("label","KylinV10_2025_01");
         archiveVMList.add(a2);
 
         Map<String,Object> a3 = new HashMap<>();
         a3.put("value","229");
-        a3.put("label","KylinV10_2024_09");
+        a3.put("label","KylinV10_2025_09");
         archiveVMList.add(a3);
 
         return RestResponse.ok(archiveVMList);

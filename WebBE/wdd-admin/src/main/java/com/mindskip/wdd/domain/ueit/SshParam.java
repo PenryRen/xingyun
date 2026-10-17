@@ -6,7 +6,7 @@ import lombok.Data;
  * ssh执行命令参数
  *
  * @author libl
- * @date 2024-04-07
+ * @date 2025-04-07
  */
 @Data
 public class SshParam {

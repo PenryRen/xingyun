@@ -3,10 +3,10 @@ system:
     #本地存储，配合nginx使用
     local-store: true
     file:
-      location: D:\libl\2024_ueit_jypt\nginx\html\resource\web-file
+      location: D:\libl\2025_ueit_jypt\nginx\html\resource\web-file
       url: http://jyptapp.ueweixin.com/ueupload/
     #违禁词过滤
-    stop-word-path: D:\libl\2024_ueit_jypt\nginx\html\resource\web-file
+    stop-word-path: D:\libl\2025_ueit_jypt\nginx\html\resource\web-file
     stop-word-enabled: false
 
 logging:
@@ -16,7 +16,7 @@ logging:
 spring:
   servlet:
     multipart:
-      location: D:\libl\2024_ueit_jypt\nginx\html\resource\servlet
+      location: D:\libl\2025_ueit_jypt\nginx\html\resource\servlet
   redis:
     host: 192.168.1.228
     database: 1

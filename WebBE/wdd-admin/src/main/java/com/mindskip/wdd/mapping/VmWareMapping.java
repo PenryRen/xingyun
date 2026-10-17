@@ -12,7 +12,7 @@ import org.mapstruct.Mapper;
  * 虚拟机实体映射
  *
  * @author libl
- * @date 2024-04-07
+ * @date 2025-04-07
  */
 @Mapper(componentModel = "spring")
 public interface VmWareMapping {

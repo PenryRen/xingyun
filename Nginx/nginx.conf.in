@@ -1,0 +1,104 @@
+# 完整主配置模板：由 Base/install-nginx.sh 将 @@INSTALL_ROOT@@ 替换为安装根目录后写入 /etc/nginx/nginx.conf
+# 目录约定与 install.sh 一致：INSTALL_PREFIX/web/{ueit-user-web,ueit-admin}、INSTALL_PREFIX/resource/web-file
+
+worker_processes auto;
+
+events {
+    worker_connections 2048;
+    multi_accept on;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+
+    gzip on;
+    gzip_comp_level 5;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    server {
+        listen 6001;
+        server_name ueit-user-web;
+
+        root @@INSTALL_ROOT@@/web/ueit-user-web;
+        index index.html;
+
+        client_max_body_size 20m;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        location /api/ {
+            proxy_pass http://127.0.0.1:16000;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            proxy_read_timeout 60;
+        }
+
+        # AI_AGENT Python 服务
+        location /ai-agent/ {
+            proxy_pass http://127.0.0.1:8000/;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            proxy_read_timeout 300;
+        }
+
+        location /ueupload/ {
+            alias @@INSTALL_ROOT@@/resource/web-file/;
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }
+
+    server {
+        listen 6003;
+        server_name ueit-admin;
+
+        root @@INSTALL_ROOT@@/web/ueit-admin;
+        index index.html;
+
+        client_max_body_size 1024m;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        location /api/ {
+            proxy_pass http://127.0.0.1:16002;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            proxy_read_timeout 300;
+        }
+
+        location /ueupload/ {
+            alias @@INSTALL_ROOT@@/resource/web-file/;
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }
+}

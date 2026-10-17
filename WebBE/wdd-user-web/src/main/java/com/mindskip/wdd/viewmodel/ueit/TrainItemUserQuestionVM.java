@@ -6,7 +6,7 @@ import lombok.Data;
  * 用户课件功能点 VM
  *
  * @author libl
- * @date 2024-04-18
+ * @date 2025-04-18
  */
 @Data
 public class TrainItemUserQuestionVM {

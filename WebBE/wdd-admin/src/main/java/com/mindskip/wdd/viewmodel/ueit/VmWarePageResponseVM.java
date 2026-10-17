@@ -13,7 +13,7 @@ import java.util.Date;
 /**
  * @version 1.7.0
  * @description: 虚拟机分页返回
- * Copyright (C), 2024, 麒技团队
+ * Copyright (C), 2025, 麟航团队
  *
  */
 @ColumnWidth(20)

@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Async;
  * 异步方法 Service接口
  *
  * @author libl
- * @date 2024-04-10
+ * @date 2025-04-10
  */
 public interface AsyncService {
 

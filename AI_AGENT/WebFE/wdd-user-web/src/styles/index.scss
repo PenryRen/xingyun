@@ -1,0 +1,47 @@
+@import 'src/styles/variables.module';
+@import 'src/styles/element-plus';
+@import 'src/styles/layout.scss';
+@import 'src/styles/common.scss';
+@import 'src/styles/dashboard.scss';
+@import 'src/styles/user-info.scss';
+@import 'src/styles/page.scss';
+@import 'src/styles/question.scss';
+@import 'src/styles/paper.scss';
+@import 'src/styles/register.scss';
+@import 'src/styles/login.scss';
+@import 'src/styles/credential.scss';
+@import 'src/styles/course-ware.scss';
+@import 'src/styles/apply.scss';
+@import 'src/styles/announcement.scss';
+@import 'src/styles/forum.scss';
+@import 'src/styles/train.scss';
+
+body {
+  margin: 0px;
+  height: 100%;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+  background-color: #fff;
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+#app {
+  height: 100%;
+  min-width: 1200px;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+
+
+

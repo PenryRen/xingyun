@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 /**
  * @version 9.5.0
  * @description: 意见反馈
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/10 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/10 10:45
  */
 @Service
 @AllArgsConstructor

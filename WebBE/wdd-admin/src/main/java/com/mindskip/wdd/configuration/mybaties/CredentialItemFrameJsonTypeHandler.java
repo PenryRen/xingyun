@@ -11,8 +11,8 @@ import java.sql.SQLException;
 /**
  * @version 7.1.0
  * @description: CredentialItemFrame对象转json
- * Copyright (C), 2024, 麒技团队
- * @date 2024/7/30 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/7/30 10:45
  */
 @MappedTypes(Object.class)
 public class CredentialItemFrameJsonTypeHandler extends BaseJsonTypeHandler {

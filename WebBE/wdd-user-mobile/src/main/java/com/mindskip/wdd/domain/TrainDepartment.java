@@ -6,8 +6,8 @@ import lombok.Setter;
 /**
  * @version 9.0.0
  * @description: 培训部门
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/16 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/16 10:45
  */
 @Getter
 @Setter

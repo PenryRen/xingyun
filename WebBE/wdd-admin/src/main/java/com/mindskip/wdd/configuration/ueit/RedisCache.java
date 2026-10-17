@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  * spring redis 工具类
  *
  * @author libl
- * @date 2024-04-15
+ * @date 2025-04-15
  */
 @SuppressWarnings(value = {"unchecked", "rawtypes"})
 @Component

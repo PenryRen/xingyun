@@ -9,8 +9,8 @@ import java.util.regex.Pattern;
 /**
  * @version 3.2.0
  * @description: html工具类
- * Copyright (C), 2024, 麒技团队
- * @date 2024/8/25 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/8/25 10:45
  */
 public class HtmlUtil {
 

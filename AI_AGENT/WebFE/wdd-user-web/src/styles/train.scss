@@ -1,0 +1,137 @@
+.train-contain {
+
+}
+
+
+.train-head {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  .train-name {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .train-item-label {
+    font-size: 14px;
+    color: #909399;
+  }
+}
+
+.train-content-tab {
+  margin-top: 10px;
+
+  .el-tabs__nav-wrap::after {
+    height: 1px !important;
+  }
+
+  .el-tabs__item {
+    font-size: 16px;
+    font-weight: 400;
+    width: 140px;
+    text-align: center;
+  }
+
+  .el-tabs__item:hover {
+    color: #68bfd6 !important;
+  }
+
+  .is-active {
+    color: #68bfd6 !important;
+  }
+
+  .train-description {
+    font-size: 14px;
+    color: #333333;
+    padding: 20px;
+  }
+
+  .train-tab-content {
+    min-height: 500px;
+  }
+
+  .train-course-item {
+    background-color: #f8f8f8;
+    padding: 20px;
+    margin: 10px 0px;
+    font-size: 14px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+
+    .train-course-item-left {
+      width: 20px;
+      display: flex;
+      align-items: center;
+
+      .el-icon {
+        font-size: 16px;
+      }
+    }
+
+    .train-course-item-content {
+      flex: 1;
+      padding: 0px 10px;
+    }
+
+    .train-course-item-right {
+      width: 180px;
+
+      .el-progress-bar__inner {
+        /*        width: 100% !important;*/
+      }
+
+      .progress-content {
+        text-align: center;
+        width: 170px;
+      }
+    }
+  }
+
+  .train-exam-paper-tab {
+    .train-paper-card {
+      font-size: 14px;
+      width: 300px;
+      cursor: pointer;
+      background-color: #f8f8f8;
+      padding: 20px;
+
+      .paper-item-des {
+        font-size: 14px;
+        color: #909399;
+      }
+    }
+
+    .train-paper-record {
+      margin-top: 20px;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      padding: 20px;
+
+      .el-table tbody tr:hover > td {
+        background-color: transparent !important
+      }
+
+      .train-paper-table-foot {
+        font-size: 14px;
+        text-align: right;
+        margin-top: 20px;
+
+        .foot-item {
+          margin-left: 20px;
+          color: #606266;
+        }
+      }
+    }
+  }
+
+
+  .tab-credential-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

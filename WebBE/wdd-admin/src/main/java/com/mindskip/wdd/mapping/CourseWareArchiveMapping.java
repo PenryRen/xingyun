@@ -11,8 +11,8 @@ import org.mapstruct.*;
 /**
  * @version 6.0.0
  * @description: 课件分类
- * Copyright (C), 2024, 麒技团队
- * @date 2024/9/15 10:28
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/9/15 10:28
  */
 @Mapper(componentModel = "spring", imports = DateTimeUtil.class)
 public interface CourseWareArchiveMapping {

@@ -5,7 +5,6 @@ requires = ["python-3.12"]
 [dev]
 build = ["bash", "scripts/setup.sh"]
 run = ["bash", "/workspace/projects/scripts/http_run.sh", "-p 5000"]
-pack = ["bash", "/workspace/projects/scripts/pack.sh"]
 deps = ["git"] # -> apt install git
 
 [deploy]

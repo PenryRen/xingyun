@@ -14,7 +14,7 @@
     <groupId>com.mindskip</groupId>
     <artifactId>ueit-admin</artifactId>
     <packaging>jar</packaging>
-    <description>领航智训AI教学管理系统</description>
+    <description>麟航智训AI教学管理系统</description>
 
 
     <dependencies>
@@ -85,9 +85,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.qcloud</groupId>
-            <artifactId>cos_api</artifactId>
-            <version>${com.qcloud.version}</version>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+            <version>${com.aliyun.oss.version}</version>
         </dependency>
 
         <dependency>
@@ -161,6 +161,18 @@
             <artifactId>jodconverter-local</artifactId>
             <version>4.4.2</version>
         </dependency>
+        <!-- 阿里云无影云桌面 OpenAPI -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>ecd20200930</artifactId>
+            <version>${aliyun.ecd20200930.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>appstream_center20210218</artifactId>
+            <version>${aliyun.appstream.center.version}</version>
+        </dependency>
+
         <!-- jsch支持 -->
         <dependency>
             <groupId>com.jcraft</groupId>

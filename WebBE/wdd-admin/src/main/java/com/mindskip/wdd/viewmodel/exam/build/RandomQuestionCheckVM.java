@@ -13,8 +13,8 @@ import java.util.List;
 /**
  * @version 7.0.0
  * @description: 组卷规则
- * Copyright (C), 2024, 麒技团队
- * @date 2024/7/18 14:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/7/18 14:45
  */
 @Data
 public class RandomQuestionCheckVM {

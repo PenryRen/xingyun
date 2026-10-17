@@ -7,8 +7,8 @@ import java.util.Map;
 /**
  * @version 7.1.0
  * @description: 证书节点类型
- * Copyright (C), 2024, 麒技团队
- * @date 2024/7/29 10:45
+ * Copyright (C), 2025, 麟航团队
+ * @date 2025/7/29 10:45
  */
 public enum CredentialItemFontEnum {
     /**

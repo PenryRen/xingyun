@@ -29,12 +29,12 @@
         <el-form-item style="margin-top:5px;">
           <input type="button" value="登录" @click="handleLogin" style="width: 100%" class="login-submit"/>
         </el-form-item>
-<!--        <el-form-item class="login-register-link">
+        <el-form-item class="login-register-link">
           <span>没有账号？</span>
           <router-link to="/register" class="login-link">
             注册
           </router-link>
-        </el-form-item>-->
+        </el-form-item>
       </el-form>
     </el-card>
     <div class="account-foot-copyright">

@@ -1,7 +1,7 @@
 system:
   resource:
     #本地存储，配合nginx使用
-    local-store: true
+    local-store: false
     file:
       location: /app/course/resource/web-file
       url: http://jyptad.ueweixin.com/ueupload/

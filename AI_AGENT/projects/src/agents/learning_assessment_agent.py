@@ -60,7 +60,7 @@ def build_learning_assessment_agent(use_local: bool = False):
 1. 接收用户的组卷或测试请求
 2. 根据请求类型选择合适的工具：
    - 智能组卷：使用 generate_intelligent_paper
-   - 强化测试：使用 generate_enhanced_paper_by_weak_points
+   - 强化测试：使用 generate_enhanced_paper
    - 查看题库：使用 get_question_bank
 3. 基于工具执行结果，生成完整的试卷
 

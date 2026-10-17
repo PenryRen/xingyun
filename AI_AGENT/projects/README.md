@@ -205,9 +205,10 @@ XINGYUN_MYSQL_USERNAME=your_mysql_user
 XINGYUN_MYSQL_PASSWORD=your_mysql_password
 XINGYUN_MYSQL_AUTO_CREATE_AI_SCHEMA=true
 
-# 豆包大模型配置
-OPENAI_API_KEY=your_api_key
-OPENAI_BASE_URL=https://your-model-base-url.com
+# 讯飞星火 Spark Ultra-32K 配置
+SPARK_API_PASSWORD=your_api_password
+SPARK_BASE_URL=https://spark-api-open.xf-yun.com/v1/
+SPARK_MODEL=4.0Ultra
 
 # 工作目录
 WORKSPACE_PATH=/path/to/your/project
@@ -221,11 +222,19 @@ WORKSPACE_PATH=/path/to/your/project
 - Agent 自有数据只授予 `ai_*` 表的读写权限；
 - 密码只写入未跟踪的 `.env`，不得提交到 Git。
 
-#### 获取豆包大模型 API Key
+#### 获取讯飞星火 APIPassword
 
-1. 注册并登录火山引擎方舟平台
-2. 创建 API Key
-3. 获取 Base URL
+1. 注册并登录讯飞开放平台
+2. 在星火大模型控制台创建并复制 APIPassword
+3. 将 APIPassword 写入本地 `.env` 的 `SPARK_API_PASSWORD`，不要提交到 Git
+
+`Spark Ultra-32K` 在 OpenAI 兼容接口中的模型参数为 `4.0Ultra`，服务地址为
+`https://spark-api-open.xf-yun.com/v1/`。
+
+聊天模型与知识库 Embedding 分开配置：知识库默认使用原有本地模型。
+若精简环境缺少知识库依赖，办学助手会明确降级为普通问答，不影响星火聊天；
+如需远程 Embedding 回退，请单独配置 `EMBEDDING_API_KEY`、`EMBEDDING_BASE_URL`
+和 `EMBEDDING_MODEL`，不要复用星火聊天接口。
 
 ### 三、数据库初始化
 

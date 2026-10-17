@@ -1,10 +1,15 @@
 import os
 from typing import Optional, Dict, Any
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace, HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from models.spark import ChatSpark
+
+
+SPARK_DEFAULT_BASE_URL = "https://spark-api-open.xf-yun.com/v1/"
+SPARK_DEFAULT_MODEL = "4.0Ultra"
+
 
 class ModelManager:
-    """模型管理器 - 负责初始化大模型并支持本地降级"""
+    """模型管理器 - 负责初始化星火大模型并支持本地降级"""
     
     @staticmethod
     def get_llm(
@@ -12,7 +17,8 @@ class ModelManager:
         model_name: Optional[str] = None,
         temperature: float = 0.7,
         streaming: bool = True,
-        timeout: int = 600
+        timeout: int = 600,
+        max_tokens: int = 8000
     ):
         """
         获取大语言模型实例
@@ -23,38 +29,42 @@ class ModelManager:
             temperature: 温度参数
             streaming: 是否流式输出
             timeout: 超时时间
+            max_tokens: 最大输出 token 数，Spark Ultra-32K 允许 1-32768
             
         Returns:
             语言模型实例
         """
         
-        ##优先使用远程模型（OpenAI 兼容接口）
+        # 优先使用星火 OpenAI 兼容接口
         try:
-            api_key = os.getenv("OPENAI_API_KEY")
-            base_url = os.getenv("OPENAI_BASE_URL")
+            api_password = os.getenv("SPARK_API_PASSWORD", "").strip()
+            base_url = os.getenv("SPARK_BASE_URL") or SPARK_DEFAULT_BASE_URL
 
-            # 检查远程模型配置是否完整
-            if not api_key:
-                raise Exception("远程模型 API 密钥未配置")
+            if not api_password:
+                raise Exception("星火 APIPassword 未配置，请设置 SPARK_API_PASSWORD")
             
-            remote_model_name = model_name or os.getenv("MODEL_NAME", "gpt-4o-mini")
+            remote_model_name = model_name or os.getenv("SPARK_MODEL") or SPARK_DEFAULT_MODEL
             
-            llm = ChatOpenAI(
+            llm = ChatSpark(
                 model=remote_model_name,
-                api_key=api_key,
+                api_key=api_password,
                 base_url=base_url,
                 temperature=temperature,
                 streaming=streaming,
-                timeout=timeout
+                timeout=timeout,
+                max_tokens=max_tokens
             )
             
             return llm
         except Exception as e:
-            print(f"远程模型初始化失败: {type(e).__name__}: {e}")
+            detail = str(e).replace(api_password, "[REDACTED]") if api_password else str(e)
+            print(f"星火模型初始化失败: {type(e).__name__}: {detail}")
             
         # 远程模型失败时回退到本地模型
         if use_local:
             try:
+                from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
+
                 local_model_name = model_name or "mistralai/Mistral-7B-v0.1"
                 llm = HuggingFaceEndpoint(
                     repo_id=local_model_name,
@@ -79,9 +89,11 @@ class ModelManager:
             模型配置字典
         """
         return {
-            "default_model": os.getenv("MODEL_NAME", "gpt-4o-mini"),
-            "api_key": os.getenv("OPENAI_API_KEY"),
-            "base_url": os.getenv("OPENAI_BASE_URL"),
+            "provider": "spark",
+            "display_name": "Spark Ultra-32K",
+            "default_model": os.getenv("SPARK_MODEL") or SPARK_DEFAULT_MODEL,
+            "configured": bool(os.getenv("SPARK_API_PASSWORD", "").strip()),
+            "base_url": os.getenv("SPARK_BASE_URL") or SPARK_DEFAULT_BASE_URL,
             "temperature": float(os.getenv("MODEL_TEMPERATURE", "0.7")),
             "timeout": int(os.getenv("MODEL_TIMEOUT", "600"))
         }
@@ -106,6 +118,8 @@ class ModelManager:
         # 优先使用本地模型
         if use_local:
             try:
+                from langchain_huggingface import HuggingFaceEmbeddings
+
                 local_model_name = model_name or "sentence-transformers/all-MiniLM-L6-v2"
                 embedding = HuggingFaceEmbeddings(
                     model_name=local_model_name,
@@ -120,15 +134,16 @@ class ModelManager:
                 print(f"本地embedding模型初始化失败，回退到远程模型: {e}")
                 use_local = False
         
-        # 回退到远程模型
+        # 回退到独立配置的远程 Embedding 服务。
+        # 星火 Ultra-32K 是聊天模型，不能复用其接口作为 Embedding 服务。
         try:
-            api_key = os.getenv("OPENAI_API_KEY")
-            base_url = os.getenv("OPENAI_BASE_URL")
+            api_key = os.getenv("EMBEDDING_API_KEY")
+            base_url = os.getenv("EMBEDDING_BASE_URL")
             
             if not api_key:
-                raise Exception("远程embedding模型 API 密钥未配置")
+                raise Exception("远程 embedding API 密钥未配置，请设置 EMBEDDING_API_KEY")
             
-            remote_model_name = model_name or "text-embedding-3-small"
+            remote_model_name = model_name or os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
             embedding = OpenAIEmbeddings(
                 model=remote_model_name,
                 api_key=api_key,

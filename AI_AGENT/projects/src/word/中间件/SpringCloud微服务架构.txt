@@ -1,0 +1,18 @@
+Spring Cloud 是基于 Spring Boot 的微服务治理框架，提供了分布式系统开发的完整解决方案。
+
+核心组件包括：
+1. 服务注册与发现：Eureka、Nacos、Consul。服务启动时向注册中心注册自己的地址，消费方从注册中心获取服务列表。
+2. 负载均衡：Ribbon、LoadBalancer。通过 RestTemplate 或 OpenFeign 调用时自动轮询多个服务实例。
+3. 服务调用：OpenFeign 声明式 HTTP 客户端，通过接口注解方式调用远程服务，无需手写 HTTP 请求。
+4. 熔断器：Hystrix、Sentinel。当某服务不可用时自动熔断，防止雪崩效应，提供降级策略。
+5. 网关：Spring Cloud Gateway、Zuul。统一入口，处理路由、鉴权、限流、日志。
+6. 配置中心：Config、Nacos Config。集中管理微服务配置，支持动态刷新。
+7. 链路追踪：Sleuth + Zipkin、SkyWalking。追踪请求在多个微服务间的调用链路。
+
+微服务设计原则：
+- 单一职责：每个服务专注一个业务领域
+- 服务自治：独立部署、独立数据库、独立技术栈
+- 分布式事务：通过 Saga、TCC、本地消息表等方式保证数据一致性
+- 服务间通信：优先使用同步的 HTTP/REST，异步场景使用消息队列
+
+国产中间件适配：Spring Cloud 可对接 Nacos（阿里）、Apollo（携程）、Sentinel（阿里）等国产组件，支持麒麟OS和达梦DB的部署运行。
